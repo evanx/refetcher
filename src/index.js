@@ -97,6 +97,7 @@ async function fetchId(id, hashesKey, hashes) {
             logger.info('status', id, hashes.url, res.status);
             await multiExecAsync(client, multi => {
                 multi.hset(hashesKey, 'status', res.status);
+                multi.hincrby(hashesKey, 'retry', 1);
                 multi.lpush(queue.failed, id);
                 multi.ltrim(queue.failed, 0, config.queueLimit);
                 multi.lrem(queue.busy, 1, id);
@@ -106,6 +107,7 @@ async function fetchId(id, hashesKey, hashes) {
         logger.warn('error', err.message, id, hashes);
         await multiExecAsync(client, multi => {
             multi.hset(hashesKey, 'error', err.message);
+            multi.hincrby(hashesKey, 'retry', 1);
             multi.lpush(queue.errored, id);
             multi.ltrim(queue.errored, 0, config.queueLimit);
             multi.lrem(queue.busy, 1, id);

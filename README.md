@@ -43,8 +43,9 @@ The `url` is retrieved from the hashes for this `id` and fetched.
 const options = {timeout: config.fetchTimeout};
 const res = await fetch(hashes.url, options);
 ```
+where we use the `node-fetch` package for the HTTP request.
 
-If `200` response, then the response text is set in Redis, and the `id` pushed to `:res:q` i.e. for notication that the response is ready for that `id`
+If an OK `200` HTTP response, then the response text is set in Redis, and the `id` pushed to `:res:q` i.e. for notication that the response is ready for that `id`
 ```javascript
 if (res.status === 200) {
     const text = await res.text();
@@ -60,6 +61,11 @@ if (res.status === 200) {
     });
 ```
 
-TODO
-- store HTTP headers in hashes
-- retry errors
+Otherwise for a non 200 status, we increment a `retry` count and move to the `failed` queue.
+```javascript
+multi.hset(hashesKey, 'status', res.status);
+multi.hincrby(hashesKey, 'retry', 1);
+multi.lpush(queue.failed, id);
+multi.ltrim(queue.failed, 0, config.queueLimit);
+multi.lrem(queue.busy, 1, id);
+```
