@@ -9,8 +9,7 @@ This service performs the following operations:
 - set the response in Redis
 - handle failures, errors and retries
 
-Having pushed URLs for async fetching in Redis, consumer services can reactively pop ready responses from Redis.
-Such application services are thereby simplified.
+Having pushed URLs in a Redis queue for async fetching, consumer services can reactively pop ready responses from Redis. Such application services are thereby simplified.
 
 Since the state of HTTP requests and responses is stored in Redis, consumers are "stateless."
 Therefore multiple consumers can be deployed e.g. for improved reliability and rolling updates.
@@ -65,7 +64,7 @@ The `url` is retrieved from the hashes for this `id` and fetched.
 const options = {timeout: config.fetchTimeout};
 const res = await fetch(hashes.url, options);
 ```
-where we use the `node-fetch` package for the HTTP request.
+where we use the `node-fetch` package for the HTTP request. Note that redirects should followed by default.
 
 If an OK `200` HTTP response, then the response text is set in Redis, and the `id` pushed to `:res:q` i.e. for notication that the response is ready for that `id`
 ```javascript
@@ -83,7 +82,7 @@ if (res.status === 200) {
     });
 ```
 
-Otherwise for a non 200 status, we increment a `retry` count and move to the `failed` queue.
+Otherwise for a error status i.e. not `200` e.g. `500` or `404` or what you you, we increment a `retry` count and move to the `failed` queue.
 ```javascript
 multi.hincrby(hashesKey, 'retry', 1);
 multi.hset(hashesKey, 'status', res.status);
