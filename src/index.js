@@ -138,21 +138,29 @@ async function startTest() {
 }
 
 const testData = {
-    valid: (multi, ctx) => {
-        multi.hset(`${config.namespace}:1:h`, 'url', ctx.validUrl);
-        multi.lpush(queue.req, '1');
+    valid: (multi, data) => {
+        multi.hset(`${config.namespace}:${data.id}:h`, 'url', data.validUrl);
+        multi.lpush(queue.req, data.id);
     },
-    timeout: multi => {
-        multi.hset(`${config.namespace}:2:h`, 'url', 'https://invalid');
-        multi.lpush(queue.req, '2');
+    invalidId: (multi, data) => {
+        multi.hset(`${config.namespace}:undefined:h`, 'url', 'http://httpstat.us/200');
+        multi.lpush(queue.req, `undefined`);
     },
-    invalidUrl: multi => {
-        multi.hset(`${config.namespace}:3:h`, 'urlnone', 'https://undefined');
-        multi.lpush(queue.req, '3');
+    missingUrl: (multi, data) => {
+        multi.hset(`${config.namespace}:${data.id}:h`, 'undefined', 'https://undefined');
+        multi.lpush(queue.req, data.id);
     },
-    invalidId: multi => {
-        multi.hset(`${config.namespace}:4undefined:h`, 'url', 'https://undefined.com');
-        multi.lpush(queue.req, '4undefined');
+    timeout: (multi, data) => {
+        multi.hset(`${config.namespace}:${data.id}:h`, 'url', 'https://invalid');
+        multi.lpush(queue.req, data.id);
+    },
+    errorUrl: (multi, data) => {
+        multi.hset(`${config.namespace}:${data.id}:h`, 'url', 'http://httpstat.us/500');
+        multi.lpush(queue.req, data.id);
+    },
+    invalidUrl: (multi, data) => {
+        multi.hset(`${config.namespace}:${data.id}:h`, 'urlnone', 'https://undefined');
+        multi.lpush(queue.req, data.id);
     }
 };
 
@@ -161,11 +169,12 @@ async function startDevelopment() {
     const letter = letters.charAt(Math.floor(Math.random()*letters.length));
     const validUrl = `http://www.tesco.com/store-locator/uk/asp/towns/?l=${letter}`;
     logger.info('startDevelopment', config.namespace, queue.req, validUrl);
-    await Promise.all(Object.keys(testData).map(async key => {
+    await Promise.all(Object.keys(testData).map(async (key, index) => {
+        const id = index + 1;
         const results = await multiExecAsync(client, multi => {
-            testData[key](multi, {validUrl});
+            testData[key](multi, {validUrl, id});
         });
-        logger.info('results', key, results.join(' '));
+        logger.info('results', key, id, results.join(' '));
     }));
     logger.info('llen', queue.req, await client.llenAsync(queue.req));
 }
