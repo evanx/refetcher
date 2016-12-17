@@ -59,7 +59,7 @@ Note our convention that Redis keys for hashes are postfixed with `:h`
 
 ## Activation
 
-The ready `id` is pushed to the request queue. This service will `brpoplush` that `id`
+The ready request `id` is pushed to the request queue. This service will `brpoplush` that `id`
 ```javascript
 let id = await client.brpoplpushAsync(queue.req, queue.busy, 8);
 if (!id) {
