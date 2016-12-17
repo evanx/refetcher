@@ -14,9 +14,9 @@ Having pushed URLs in a Redis queue for async fetching, consumer services can re
 Since the state of HTTP requests and responses is stored in Redis, consumers are "stateless."
 Therefore multiple consumers can be deployed e.g. for improved reliability and rolling updates.
 
-## Development configuration
+## configuration
 
-Development config
+`config/development.js`
 ```javascript
 namespace: 'fetch',
 processExpire: 60,
