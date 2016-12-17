@@ -138,29 +138,29 @@ async function startTest() {
 }
 
 const testData = {
-    valid: (multi, data) => {
-        multi.hset(`${config.namespace}:${data.id}:h`, 'url', data.validUrl);
-        multi.lpush(queue.req, data.id);
+    ok: (multi, ctx) => {
+        multi.hset(`${config.namespace}:${ctx.id}:h`, 'url', ctx.validUrl);
+        multi.lpush(queue.req, ctx.id);
     },
-    invalidId: (multi, data) => {
+    invalidId: (multi, ctx) => {
         multi.hset(`${config.namespace}:undefined:h`, 'url', 'http://httpstat.us/200');
-        multi.lpush(queue.req, `undefined`);
+        multi.lpush(queue.req, 'undefined');
     },
-    missingUrl: (multi, data) => {
-        multi.hset(`${config.namespace}:${data.id}:h`, 'undefined', 'https://undefined');
-        multi.lpush(queue.req, data.id);
+    missingUrl: (multi, ctx) => {
+        multi.hset(`${config.namespace}:${ctx.id}:h`, 'undefined', 'http://httpstat.us/200');
+        multi.lpush(queue.req, ctx.id);
     },
-    timeout: (multi, data) => {
-        multi.hset(`${config.namespace}:${data.id}:h`, 'url', 'https://invalid');
-        multi.lpush(queue.req, data.id);
+    timeout: (multi, ctx) => {
+        multi.hset(`${config.namespace}:${ctx.id}:h`, 'url', 'https://com.invalid');
+        multi.lpush(queue.req, ctx.id);
     },
-    errorUrl: (multi, data) => {
-        multi.hset(`${config.namespace}:${data.id}:h`, 'url', 'http://httpstat.us/500');
-        multi.lpush(queue.req, data.id);
+    errorUrl: (multi, ctx) => {
+        multi.hset(`${config.namespace}:${ctx.id}:h`, 'url', 'http://httpstat.us/500');
+        multi.lpush(queue.req, ctx.id);
     },
-    invalidUrl: (multi, data) => {
-        multi.hset(`${config.namespace}:${data.id}:h`, 'urlnone', 'https://undefined');
-        multi.lpush(queue.req, data.id);
+    invalidUrl: (multi, ctx) => {
+        multi.hset(`${config.namespace}:${ctx.id}:h`, 'url', 'http://undefined');
+        multi.lpush(queue.req, ctx.id);
     }
 };
 
