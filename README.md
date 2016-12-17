@@ -14,7 +14,7 @@ Having pushed URLs in a Redis queue for async fetching, consumer services can re
 Since the state of HTTP requests and responses is stored in Redis, consumers are "stateless."
 Therefore multiple consumers can be deployed e.g. for improved reliability and rolling updates.
 
-## configuration
+## Configuration
 
 `config/development.js`
 ```javascript
@@ -29,9 +29,9 @@ loggerLevel: 'debug'
 ```
 where all Redis keys will be prefixed with `fetch`
 
-## Implementation
 
-Queues:
+## Queues
+
 ```javascript
 const queue = ['req', 'res', 'busy', 'failed', 'errored', 'retry'].reduce((a, v) => {
     a[v] = `${config.namespace}:${v}:q`;
@@ -41,7 +41,8 @@ const queue = ['req', 'res', 'busy', 'failed', 'errored', 'retry'].reduce((a, v)
 
 Note our convention that Redis keys for queues are postfixed with `:q`
 
-## Sample test data
+
+## Test data
 
 ```javascript
 multi.hset(`${config.namespace}:1:h`, 'url', url);
