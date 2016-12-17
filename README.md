@@ -72,7 +72,7 @@ const testData = {
     }
 };
 ```
-where the `url` is set in hashes for a specific `id` e.g. `fetch:1:h` has member `url` for request `1`
+where the `url` is set in hashes for a specific `id` e.g. hashes `fetch:1:h` has member `url` for request `1`
 
 Note our convention that Redis keys for hashes are postfixed with `:h`
 
