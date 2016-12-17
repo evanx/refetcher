@@ -79,7 +79,7 @@ Note our convention that Redis keys for hashes are postfixed with `:h`
 
 ## Activation
 
-Some external service request a fetch via Redis as follows:
+Some external service can request a fetch via Redis by this service as follows:
 - generates a new unique request `id` e.g. `123` via `INCR fetch:id:seq`
 - sets hashes for that request e.g. `HSET fetch:123:h url ${id}``
 - pushes the request `id` to our queue e.g. `LPUSH fetch:req:q 123`
