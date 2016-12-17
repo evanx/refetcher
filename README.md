@@ -45,20 +45,26 @@ Note our convention that Redis keys for queues are postfixed with `:q`
 ## Test data
 
 ```javascript
-// valid test page to fetch
-multi.hset(`${config.namespace}:1:h`, 'url', url);
-multi.lpush(queue.req, '1');
-// invalid URL that should timeout
-multi.hset(`${config.namespace}:2:h`, 'url', 'https://invalid');
-multi.lpush(queue.req, '2');
-// invalid URL that should not even be attempted
-multi.hset(`${config.namespace}:3:h`, 'url', 'undefined');
-multi.lpush(queue.req, '3');
-// invalid ID that should not even be attempted
-multi.hset(`${config.namespace}:4undefined:h`, 'url', 'http://httpstat.us/200');
-multi.lpush(queue.req, '4undefined');
+const testData = {
+    valid: (multi, data) => {
+        multi.hset(`${config.namespace}:1:h`, 'url', data.validUrl);
+        multi.lpush(queue.req, '1');
+    },
+    timeout: multi => {
+        multi.hset(`${config.namespace}:2:h`, 'url', 'https://invalid');
+        multi.lpush(queue.req, '2');
+    },
+    invalidUrl: multi => {
+        multi.hset(`${config.namespace}:3:h`, 'urlnone', 'https://undefined');
+        multi.lpush(queue.req, '3');
+    },
+    invalidId: multi => {
+        multi.hset(`${config.namespace}:4undefined:h`, 'url', 'https://undefined.com');
+        multi.lpush(queue.req, '4undefined');
+    }
+};
 ```
-where the `url` is set in hashes for a specific `id` e.g. `1`
+where the `url` is set in hashes for a specific `id` e.g. `fetch:1:h` has member `url` for request `1`
 
 Note our convention that Redis keys for hashes are postfixed with `:h`
 
