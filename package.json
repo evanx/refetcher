@@ -4,6 +4,7 @@
   "description": "Fetch URL content into Redis",
   "main": "index.js",
   "scripts": {
+    "lint": "eslint --cache src",
     "test": "babel src/index.js --out-file build/index.js; NODE_ENV=test /opt/node7/bin/node build/index.js",
     "curl-local": "curl -s http://localhost:8801/echo/test | jq '.'",
     "curl-telebot": "curl -s https://telebot.webserva.com/echo/test | jq '.'",
@@ -25,7 +26,8 @@
   },
   "devDependencies": {
     "babel-cli": "^6.18.0",
-    "babel-preset-es2017": "^6.16.0"
+    "babel-preset-es2017": "^6.16.0",
+    "eslint": "^3.12.2"
   },
   "repository": {
     "type": "git",
