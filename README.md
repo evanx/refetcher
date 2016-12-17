@@ -52,8 +52,8 @@ multi.lpush(queue.req, '1');
 multi.hset(`${config.namespace}:2:h`, 'url', 'https://invalid');
 multi.lpush(queue.req, '2');
 // invalid URL that should not even be attempted
-multi.hset(`${config.namespace}:undefined:h`, 'url', 'undefined');
-multi.lpush(queue.req, 'undefined');
+multi.hset(`${config.namespace}:3:h`, 'url', 'undefined');
+multi.lpush(queue.req, '3');
 // invalid ID that should not even be attempted
 multi.hset(`${config.namespace}:4undefined:h`, 'url', 'http://httpstat.us/200');
 multi.lpush(queue.req, '4undefined');
