@@ -61,9 +61,9 @@ async function start() {
             const hashesKey = [config.namespace, id, 'h'].join(':');
             const hashes = await client.hgetallAsync(hashesKey);
             if (!hashes) {
-                logger.warn('hashes', hashesKey);
+                logger.error('hashes', hashesKey);
             } else {
-                logger.info('hashes url', hashes.url, hashesKey, config.messageExpire);
+                logger.debug('url', hashes.url, hashesKey, config.messageExpire);
                 client.expire(hashesKey, config.messageExpire);
                 handle(id, hashesKey, hashes);
             }
