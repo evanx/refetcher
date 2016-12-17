@@ -94,7 +94,7 @@ where we use the `node-fetch` package for the HTTP request. Note that redirects 
 
 ## Reply
 
-If an OK `200` HTTP response, then the response text is set in Redis, and the `id` pushed to `:res:q` i.e. for notication that the response is ready for that `id`
+If an OK `200` HTTP response, then the response text is set in Redis, and the `id` pushed to `:res:q` i.e. to notify a reactive consumer that the response is ready for that `id`
 ```javascript
 if (res.status === 200) {
     const text = await res.text();
