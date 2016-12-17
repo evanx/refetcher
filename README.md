@@ -87,8 +87,7 @@ if (!hashes) {
 
 The `url` as retrieved from the hashes for this `id` is fetched i.e. an HTTP request is performed.
 ```javascript
-const options = {timeout: config.fetchTimeout};
-const res = await fetch(hashes.url, options);
+const res = await fetch(hashes.url, {timeout: config.fetchTimeout});
 ```
 where we use the `node-fetch` package for the HTTP request. Note that redirects should followed by default.
 
