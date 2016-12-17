@@ -15,6 +15,10 @@ where all Redis keys will be prefixed with `fetch`
 
 Queues:
 ```javascript
+const queue = ['req', 'res', 'busy', 'failed', 'errored'].reduce((a, v) => {
+    a[v] = `${config.namespace}:${v}:q`;
+    return a;
+}, {});
 ```
 
 Test data
