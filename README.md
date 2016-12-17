@@ -75,7 +75,7 @@ Then it will retrieve the `url` from the hashes for this request `id`
 const hashesKey = [config.namespace, id, 'h'].join(':');
 const hashes = await client.hgetallAsync(hashesKey);
 if (!hashes) {
-    logger.warn('hashes', hashesKey);
+    logger.error('hashes', hashesKey);
 } else {
     logger.info('hashes url', hashes.url, hashesKey, config.messageExpire);
     client.expire(hashesKey, config.messageExpire);
