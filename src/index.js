@@ -34,7 +34,7 @@ async function start() {
         ['started', 'pid'].forEach(property => {
             multi.hset(instanceKey, property, state[property]);
         });
-        multi.expire(instanceKey, config.instanceExpire);
+        multi.expire(instanceKey, config.processExpire);
     });
     if (process.env.NODE_ENV === 'development') {
         await startDevelopment();
@@ -46,24 +46,21 @@ async function start() {
         const id = await client.brpoplpushAsync(queue.req, queue.busy, 4);
         if (!id) {
             logger.debug('queue empty', queue.req);
-            logger.debug('res', (await multiExecAsync(client, multi => {
-                multi.llen(queue.res);
-                multi.lrange(queue.res, 0, 5);
-            })).join(' '));
-            logger.debug('busy', (await multiExecAsync(client, multi => {
+            const [llen, lrange] = await multiExecAsync(client, multi => {
                 multi.llen(queue.busy);
                 multi.lrange(queue.busy, 0, 5);
-            })).join(' '));
+            });
+            if (llen) {
+                logger.debug('busy', lrange);
+            }
         } else {
             const hashesKey = [config.namespace, id, 'h'].join(':');
             const hashes = await client.hgetallAsync(hashesKey);
             if (!hashes) {
                 logger.warn('hashes', hashesKey);
-            } else if (!hashes.url) {
-                logger.warn('hashes url', hashesKey, hashes);
             } else {
-                logger.info('hashes url', hashes.url, hashesKey, config.idExpire);
-                client.expire(hashesKey, config.idExpire);
+                logger.info('hashes url', hashes.url, hashesKey, config.messageExpire);
+                client.expire(hashesKey, config.messageExpire);
                 fetchId(id, hashesKey, hashes);
             }
         }
@@ -73,7 +70,7 @@ async function start() {
 
 async function fetchId(id, hashesKey, hashes) {
     try {
-        if (id === 'undefined') {
+        if (!/[0-9]$/.test(id)) {
             throw new Error(`invalid id ${id}`);
         }
         if (!hashes.url || hashes.url.endsWith('undefined')) {
@@ -88,10 +85,10 @@ async function fetchId(id, hashesKey, hashes) {
                 Object.keys(res.headers._headers).forEach(key => {
                     multi.hset(`${config.namespace}:${id}:headers:h`, key, res.headers.get(key).toString());
                 });
-                multi.expire(`${config.namespace}:${id}:headers:h`, config.idExpire);
+                multi.expire(`${config.namespace}:${id}:headers:h`, config.messageExpire);
                 multi.hset(hashesKey, 'status', res.status);
                 multi.hset(hashesKey, 'content-type', res.headers.get('content-type'));
-                multi.setex(`${config.namespace}:${id}:text`, config.idExpire, text);
+                multi.setex(`${config.namespace}:${id}:text`, config.messageExpire, text);
                 multi.lpush(queue.res, id);
                 multi.ltrim(queue.res, 0, config.queueLimit);
                 multi.lrem(queue.busy, 1, id);
@@ -133,6 +130,8 @@ async function startDevelopment() {
         multi.lpush(queue.req, 'undefined3');
         multi.hset(`${config.namespace}:undefined4:h`, 'url', 'https://undefined');
         multi.lpush(queue.req, 'undefined4');
+        multi.hset(`${config.namespace}:5undefined:h`, 'url', 'https://undefined');
+        multi.lpush(queue.req, '5undefined');
     });
     logger.info('results', results.join(' '));
     logger.info('llen', queue.req, await client.llenAsync(queue.req));

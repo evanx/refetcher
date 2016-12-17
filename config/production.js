@@ -1,8 +1,8 @@
 module.exports = {
     namespace: 'fetch',
-    instanceExpire: 60,
+    processExpire: 60,
     queueLimit: 9000,
     fetchTimeout: 6000,
-    idExpire: 60,
+    messageExpire: 60,
     loggerLevel: 'info'
 };

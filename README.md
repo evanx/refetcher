@@ -4,9 +4,9 @@ Pop an HTTP URL from a Redis queue, HTTP fetch and set the response in Redis.
 
 Development config
 ```javascript
-ns: 'fetch',
-instanceExpire: 60,
-resExpire: 60,
+namespace: 'fetch',
+processExpire: 60,
+messageExpire: 60,
 queueLimit: 1000,
 fetchTimeout: 6000,
 loggerLevel: 'debug'
@@ -15,27 +15,22 @@ where all Redis keys will be prefixed with `fetch`
 
 Queues:
 ```javascript
-const reqQueue = `${config.namespace}:req:q`;
-const resQueue = `${config.namespace}:res:q`;
-const busyQueue = `${config.namespace}:busy:q`;
-const failedQueue = `${config.namespace}:failed:q`;
-const errorQueue = `${config.namespace}:err:q`;
 ```
 
 Test data
 ```javascript
 multi.hset(`${config.namespace}:1:h`, 'url', url);
-multi.lpush(reqQueue, '1');
+multi.lpush(queue.req, '1');
 multi.hset(`${config.namespace}:2:h`, 'url', 'https://invalid');
-multi.lpush(reqQueue, '2');
+multi.lpush(queue.req, '2');
 multi.hset(`${config.namespace}:undefined:h`, 'url', 'undefined');
-multi.lpush(reqQueue, 'undefined');
+multi.lpush(queue.req, 'undefined');
 ```
 where the `url` is set in hashes for a specific `id` e.g. `1`
 
 The ready `id` is pushed to the request queue. This service will `brpoplush` that `id`
 ```javascript
-const id = await client.brpoplpushAsync(reqQueue, busyQueue, 4);
+const id = await client.brpoplpushAsync(queue.req, queue.busy, 4);
 ```
 
 The `url` is retrieved from the hashes for this `id` and fetched.
@@ -51,10 +46,12 @@ if (res.status === 200) {
     logger.debug('text', text.length, hashesKey);
     await multiExecAsync(client, multi => {
         multi.hset(hashesKey, 'status', res.status);
-        multi.setex(`${config.namespace}:${id}:text`, config.resExpire, text);
-        multi.lpush(resQueue, id);
-        multi.ltrim(resQueue, config.queueLimit);
-        multi.lrem(busyQueue, 1, id);
+        multi.setex(`${config.namespace}:${id}:text`, config.messageExpire, text);
+        multi.hmset(`${config.namespace}:${id}:headers:h`, res.headers._headers);
+        multi.expire(`${config.namespace}:${id}:headers:h`, config.messageExpire);
+        multi.lpush(queue.res, id);
+        multi.ltrim(queue.res, config.queueLimit);
+        multi.lrem(queue.busy, 1, id);
     });
 ```
 
