@@ -120,6 +120,7 @@ async function handle(id, hashesKey, hashes) {
     } catch (err) {
         const [retry] = await multiExecAsync(client, multi => {
             multi.hincrby(hashesKey, 'retry', 1);
+            multi.hset(hashesKey, 'limit', config.retryLimit);
             multi.hset(hashesKey, 'error', err.message);
             multi.lpush(queue.errored, id);
             multi.ltrim(queue.errored, 0, config.queueLimit);
@@ -142,7 +143,7 @@ async function startTest() {
 
 const testData = {
     ok: (multi, ctx) => {
-        multi.hset(`${config.namespace}:${ctx.id}:h`, 'url', ctx.validUrl);
+        multi.hset(`${config.namespace}:${ctx.id}:h`, 'url', 'http://httpstat.us/200');
         multi.lpush(queue.req, ctx.id);
     },
     invalidId: (multi, ctx) => {
@@ -168,14 +169,11 @@ const testData = {
 };
 
 async function startDevelopment() {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const letter = letters.charAt(Math.floor(Math.random()*letters.length));
-    const validUrl = `http://www.tesco.com/store-locator/uk/asp/towns/?l=${letter}`;
-    logger.info('startDevelopment', config.namespace, queue.req, validUrl);
+    logger.info('startDevelopment', config.namespace, queue.req);
     await Promise.all(Object.keys(testData).map(async (key, index) => {
-        const id = index + 1;
+        const id = index + 101;
         const results = await multiExecAsync(client, multi => {
-            testData[key](multi, {validUrl, id});
+            testData[key](multi, {id});
         });
         logger.info('results', key, id, results.join(' '));
     }));
