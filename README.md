@@ -70,7 +70,7 @@ if (!id) {
 ```
 where in-flight requests are pushed to the `busy` queue.
 
-Note that only after the `popTimeout` on the blocking pop on the request queue, we will retry an earlier request from the retry queue.
+Note that only after the `popTimeout` on the blocking pop on the request queue, we will retry an earlier request from the retry queue. Therefor retries have a lesser priority than new requests, and are somewhat delayed.
 
 Then it will retrieve the `url` from the hashes for this request `id`
 ```javascript
