@@ -143,14 +143,19 @@ async function startDevelopment() {
     const url = `http://www.tesco.com/store-locator/uk/asp/towns/?l=${letter}`;
     logger.info('startDevelopment', config.namespace, queue.req, url);
     const results = await multiExecAsync(client, multi => {
+        // valid test page to fetch
         multi.hset(`${config.namespace}:1:h`, 'url', url);
         multi.lpush(queue.req, '1');
+        // invalid URL that should timeout
         multi.hset(`${config.namespace}:2:h`, 'url', 'https://invalid');
         multi.lpush(queue.req, '2');
+        // invalid URL that should not even be attempted
         multi.hset(`${config.namespace}:undefined3:h`, 'urlnone', 'https://undefined');
         multi.lpush(queue.req, 'undefined3');
+        // invalid URL that should not even be attempted
         multi.hset(`${config.namespace}:undefined4:h`, 'url', 'https://undefined');
         multi.lpush(queue.req, 'undefined4');
+        // invalid URL that should not even be attempted
         multi.hset(`${config.namespace}:5undefined:h`, 'url', 'https://undefined');
         multi.lpush(queue.req, '5undefined');
     });
