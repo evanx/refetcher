@@ -152,3 +152,11 @@ multi.ltrim(queue.failed, 0, config.queueLimit);
 multi.lrem(queue.busy, 1, id);
 ```
 If the `retry` count is within the `limit` then it will be retried later via the `:retry:q` queue.
+```javascript
+if (retry < config.retryLimit) {
+    await multiExecAsync(client, multi => {
+        multi.lpush(queue.retry, id);
+        multi.ltrim(queue.retry, 0, config.queueLimit);
+    });
+}
+```
