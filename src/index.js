@@ -111,6 +111,7 @@ async function handle(id, hashesKey, hashes) {
                     multi.lpush(queue.retry, id);
                     multi.ltrim(queue.retry, 0, config.queueLimit);
                 });
+                logger.debug('retry llen', llen);
             }
         }
     } catch (err) {
@@ -123,10 +124,12 @@ async function handle(id, hashesKey, hashes) {
         });
         logger.warn('error', err.message, config.retryLimit, {id, hashes, retry});
         if (retry < config.retryLimit) {
-            const [llen] = await multiExecAsync(client, multi => {
+            const [llen, lrange] = await multiExecAsync(client, multi => {
                 multi.lpush(queue.retry, id);
+                multi.lrange(queue.retry, 0, 5);
                 multi.ltrim(queue.retry, 0, config.queueLimit);
             });
+            logger.debug('retry llen', llen, lrange);
         }
     }
 }
