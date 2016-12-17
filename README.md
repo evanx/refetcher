@@ -21,7 +21,7 @@ const queue = ['req', 'res', 'busy', 'failed', 'errored'].reduce((a, v) => {
 }, {});
 ```
 
-Test data
+Sample test data
 ```javascript
 multi.hset(`${config.namespace}:1:h`, 'url', url);
 multi.lpush(queue.req, '1');
@@ -36,6 +36,7 @@ The ready `id` is pushed to the request queue. This service will `brpoplush` tha
 ```javascript
 const id = await client.brpoplpushAsync(queue.req, queue.busy, 4);
 ```
+where in-flight requests are pushed to the `busy` queue.
 
 The `url` is retrieved from the hashes for this `id` and fetched.
 ```javascript
