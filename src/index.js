@@ -150,14 +150,14 @@ async function startDevelopment() {
         multi.hset(`${config.namespace}:2:h`, 'url', 'https://invalid');
         multi.lpush(queue.req, '2');
         // invalid URL that should not even be attempted
-        multi.hset(`${config.namespace}:undefined3:h`, 'urlnone', 'https://undefined');
-        multi.lpush(queue.req, 'undefined3');
+        multi.hset(`${config.namespace}:3:h`, 'urlnone', 'https://undefined');
+        multi.lpush(queue.req, '3');
+        // invalid ID that should not even be attempted
+        multi.hset(`${config.namespace}:4undefined:h`, 'url', 'https://undefined.com');
+        multi.lpush(queue.req, '4undefined');
         // invalid URL that should not even be attempted
-        multi.hset(`${config.namespace}:undefined4:h`, 'url', 'https://undefined');
-        multi.lpush(queue.req, 'undefined4');
-        // invalid URL that should not even be attempted
-        multi.hset(`${config.namespace}:5undefined:h`, 'url', 'https://undefined');
-        multi.lpush(queue.req, '5undefined');
+        multi.hset(`${config.namespace}:undefined5:h`, 'url', 'https://undefined');
+        multi.lpush(queue.req, 'undefined5');
     });
     logger.info('results', results.join(' '));
     logger.info('llen', queue.req, await client.llenAsync(queue.req));
