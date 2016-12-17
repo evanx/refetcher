@@ -96,14 +96,17 @@ async function handle(id, hashesKey, hashes) {
                 multi.lpush(queue.res, id);
                 multi.ltrim(queue.res, 0, config.queueLimit);
                 multi.lrem(queue.busy, 1, id);
+                multi.publish(`${config.namespace}:res`, id);
             });
         } else {
             const [retry] = await multiExecAsync(client, multi => {
                 multi.hincrby(hashesKey, 'retry', 1);
+                multi.hset(hashesKey, 'limit', config.retryLimit);
                 multi.hset(hashesKey, 'status', res.status);
                 multi.lpush(queue.failed, id);
                 multi.ltrim(queue.failed, 0, config.queueLimit);
                 multi.lrem(queue.busy, 1, id);
+                multi.publish(`${config.namespace}:res`, id);
             });
             logger.info('status', res.status, config.retryLimit, {id, hashes, retry});
             if (retry < config.retryLimit) {

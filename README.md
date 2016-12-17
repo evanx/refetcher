@@ -131,16 +131,24 @@ if (res.status === 200) {
         multi.lpush(queue.res, id);
         multi.ltrim(queue.res, config.queueLimit);
         multi.lrem(queue.busy, 1, id);
+        multi.publish(`${config.namespace}:res`, id);
     });
 ```
+
+Note that consumers who have pushed a request ID could subscribe to the channel `fetch:res` to be notified when the response is ready. Alternatively:
+- monitor the `res:q` output queue
+- poll for `fetch:${id}:text`
+- poll the `status` member of the hashes `:${id}:h`
 
 ## Error handling
 
 Otherwise for a error status i.e. not `200` e.g. `500` or `404` or what you you, we increment a `retry` count and "move" the `id` to the `failed` queue.
 ```javascript
 multi.hincrby(hashesKey, 'retry', 1);
+multi.hset(hashesKey, 'limit', config.retryLimit);
 multi.hset(hashesKey, 'status', res.status);
 multi.lpush(queue.failed, id);
 multi.ltrim(queue.failed, 0, config.queueLimit);
 multi.lrem(queue.busy, 1, id);
 ```
+If the `retry` count is within the `limit` then it will be retried later via the `:retry:q` queue.
