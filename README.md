@@ -41,7 +41,8 @@ const queue = ['req', 'res', 'busy', 'failed', 'errored', 'retry'].reduce((a, v)
 
 Note our convention that Redis keys for queues are postfixed with `:q`
 
-Sample test data
+## Sample test data
+
 ```javascript
 multi.hset(`${config.namespace}:1:h`, 'url', url);
 multi.lpush(queue.req, '1');
@@ -53,6 +54,9 @@ multi.lpush(queue.req, 'undefined');
 where the `url` is set in hashes for a specific `id` e.g. `1`
 
 Note our convention that Redis keys for hashes are postfixed with `:h`
+
+
+## Activation
 
 The ready `id` is pushed to the request queue. This service will `brpoplush` that `id`
 ```javascript
@@ -85,6 +89,8 @@ if (res.status === 200) {
         multi.lrem(queue.busy, 1, id);
     });
 ```
+
+## Error handling
 
 Otherwise for a error status i.e. not `200` e.g. `500` or `404` or what you you, we increment a `retry` count and move to the `failed` queue.
 ```javascript
