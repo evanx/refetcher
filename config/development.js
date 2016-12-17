@@ -1,7 +1,7 @@
 module.exports = {
     namespace: 'fetch',
     processExpire: 60,
-    popTimeout: 1000,
+    popTimeout: 8,
     queueLimit: 1000,
     fetchTimeout: 6000,
     messageExpire: 60,

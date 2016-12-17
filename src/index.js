@@ -43,7 +43,7 @@ async function start() {
     } else {
     }
     while (true) {
-        let id = await client.brpoplpushAsync(queue.req, queue.busy, 8);
+        let id = await client.brpoplpushAsync(queue.req, queue.busy, config.popTimeout);
         if (!id) {
             id = await client.rpoplpushAsync(queue.retry, queue.busy);
         }

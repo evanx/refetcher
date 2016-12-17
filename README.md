@@ -63,12 +63,14 @@ A ready request `id` is pushed to the request queue by some producer, which has 
 
 This service will `brpoplush` that `id`
 ```javascript
-let id = await client.brpoplpushAsync(queue.req, queue.busy, 8);
+let id = await client.brpoplpushAsync(queue.req, queue.busy, config.popTimeout);
 if (!id) {
     id = await client.rpoplpushAsync(queue.retry, queue.busy);
 }
 ```
 where in-flight requests are pushed to the `busy` queue.
+
+Note that only after the `popTimeout` on the blocking pop on the request queue, we will retry an earlier request from the retry queue.
 
 Then it will retrieve the `url` from the hashes for this request `id`
 ```javascript
