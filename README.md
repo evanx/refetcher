@@ -55,7 +55,7 @@ multi.lpush(queue.req, '2');
 multi.hset(`${config.namespace}:undefined:h`, 'url', 'undefined');
 multi.lpush(queue.req, 'undefined');
 // invalid ID that should not even be attempted
-multi.hset(`${config.namespace}:4undefined:h`, 'url', 'http://none.none');
+multi.hset(`${config.namespace}:4undefined:h`, 'url', 'http://httpstat.us/200');
 multi.lpush(queue.req, '4undefined');
 ```
 where the `url` is set in hashes for a specific `id` e.g. `1`
