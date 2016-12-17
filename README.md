@@ -135,7 +135,7 @@ if (res.status === 200) {
     });
 ```
 
-Note that consumers who have pushed a request ID could subscribe to the channel `fetch:res` to be notified when the response is ready. Alternatively:
+Note that consumers who have pushed a request `id` could subscribe to the channel `fetch:res` to be notified when the response is ready. Alternatively:
 - monitor the `:res:q` output queue
 - poll the `status` member of the hashes `:${id}:h`
 - poll if key `:${id}:text` exists
