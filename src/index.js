@@ -137,29 +137,36 @@ async function handle(id, hashesKey, hashes) {
 async function startTest() {
 }
 
+const testData = {
+    valid: (multi, ctx) => {
+        multi.hset(`${config.namespace}:1:h`, 'url', ctx.validUrl);
+        multi.lpush(queue.req, '1');
+    },
+    timeout: multi => {
+        multi.hset(`${config.namespace}:2:h`, 'url', 'https://invalid');
+        multi.lpush(queue.req, '2');
+    },
+    invalidUrl: multi => {
+        multi.hset(`${config.namespace}:3:h`, 'urlnone', 'https://undefined');
+        multi.lpush(queue.req, '3');
+    },
+    invalidId: multi => {
+        multi.hset(`${config.namespace}:4undefined:h`, 'url', 'https://undefined.com');
+        multi.lpush(queue.req, '4undefined');
+    }
+};
+
 async function startDevelopment() {
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     const letter = letters.charAt(Math.floor(Math.random()*letters.length));
-    const url = `http://www.tesco.com/store-locator/uk/asp/towns/?l=${letter}`;
-    logger.info('startDevelopment', config.namespace, queue.req, url);
-    const results = await multiExecAsync(client, multi => {
-        // valid test page to fetch
-        multi.hset(`${config.namespace}:1:h`, 'url', url);
-        multi.lpush(queue.req, '1');
-        // invalid URL that should timeout
-        multi.hset(`${config.namespace}:2:h`, 'url', 'https://invalid');
-        multi.lpush(queue.req, '2');
-        // invalid URL that should not even be attempted
-        multi.hset(`${config.namespace}:3:h`, 'urlnone', 'https://undefined');
-        multi.lpush(queue.req, '3');
-        // invalid ID that should not even be attempted
-        multi.hset(`${config.namespace}:4undefined:h`, 'url', 'https://undefined.com');
-        multi.lpush(queue.req, '4undefined');
-        // invalid URL that should not even be attempted
-        multi.hset(`${config.namespace}:undefined5:h`, 'url', 'https://undefined');
-        multi.lpush(queue.req, 'undefined5');
-    });
-    logger.info('results', results.join(' '));
+    const validUrl = `http://www.tesco.com/store-locator/uk/asp/towns/?l=${letter}`;
+    logger.info('startDevelopment', config.namespace, queue.req, validUrl);
+    await Promise.all(Object.keys(testData).map(async key => {
+        const results = await multiExecAsync(client, multi => {
+            testData[key](multi, {validUrl});
+        });
+        logger.info('results', key, results.join(' '));
+    }));
     logger.info('llen', queue.req, await client.llenAsync(queue.req));
 }
 
