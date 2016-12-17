@@ -72,7 +72,7 @@ const testData = {
     }
 };
 ```
-where the `url` is set in hashes for a specific `id` e.g. hashes `fetch:1:h` has member `url` for request `1`
+where the `url` is set in hashes for a specific `id` e.g. hashes `fetch:1:h` has field `url` for request `1`
 
 Note our convention that Redis keys for hashes are postfixed with `:h`
 
@@ -137,7 +137,7 @@ if (res.status === 200) {
 
 Note that consumers who have pushed a request `id` could subscribe to the channel `fetch:res` to be notified when the response is ready. Alternatively:
 - monitor the `:res:q` output queue
-- poll the `status` member of the hashes `:${id}:h`
+- poll the `status` field of the hashes `:${id}:h`
 - poll if key `:${id}:text` exists
 
 ## Error handling
