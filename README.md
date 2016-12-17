@@ -20,7 +20,7 @@ Therefore multiple consumers can be deployed e.g. for improved reliability and r
 ```javascript
 namespace: 'fetch',
 processExpire: 60,
-popTimeout: 4000,
+popTimeout: 1,
 messageExpire: 60,
 queueLimit: 1000,
 fetchTimeout: 6000,
