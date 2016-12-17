@@ -100,7 +100,7 @@ After popping a request `id` then the service will retrieve the `url` from the h
 const hashesKey = [config.namespace, id, 'h'].join(':');
 const hashes = await client.hgetallAsync(hashesKey);
 if (!hashes) {
-    logger.error('hashes', hashesKey);
+    logger.info('hashes expired', hashesKey);
 } else {
     logger.debug('url', hashes.url, hashesKey, config.messageExpire);
     client.expire(hashesKey, config.messageExpire);
