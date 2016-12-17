@@ -9,7 +9,7 @@ This service performs the following operations:
 - set the response in Redis
 - handle failures, errors and retries
 
-Having pushed URLs in a Redis queue for async fetching, consumer services can reactively pop ready responses from Redis. Such application services are thereby simplified.
+Having pushed URLs into a Redis queue for async fetching, consumer services can reactively pop ready responses from Redis. Such application services are thereby simplified.
 
 Since the state of HTTP requests and responses is stored in Redis, consumers are "stateless."
 Therefore multiple consumers can be deployed e.g. for improved reliability and rolling updates.
