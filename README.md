@@ -85,7 +85,7 @@ if (!hashes) {
 
 ## Handler
 
-The `url` is retrieved from the hashes for this `id` and fetched.
+The `url` as retrieved from the hashes for this `id` is fetched i.e. an HTTP request is performed.
 ```javascript
 const options = {timeout: config.fetchTimeout};
 const res = await fetch(hashes.url, options);
