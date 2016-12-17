@@ -112,7 +112,7 @@ if (res.status === 200) {
 
 ## Error handling
 
-Otherwise for a error status i.e. not `200` e.g. `500` or `404` or what you you, we increment a `retry` count and move to the `failed` queue.
+Otherwise for a error status i.e. not `200` e.g. `500` or `404` or what you you, we increment a `retry` count and "move" the `id` to the `failed` queue.
 ```javascript
 multi.hincrby(hashesKey, 'retry', 1);
 multi.hset(hashesKey, 'status', res.status);
