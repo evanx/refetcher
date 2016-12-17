@@ -90,7 +90,7 @@ if (!id) {
 ```
 where in-flight requests are pushed to the `busy` queue.
 
-Note that only after the `popTimeout` on the blocking pop on the request queue, we will retry an earlier request from the retry queue. Therefor retries have a lesser priority than new requests, and are somewhat delayed.
+Note that only after the `popTimeout` on the blocking pop on the request queue, we will retry an earlier request from the retry queue. Therefore retries have a lesser priority than new requests, and are somewhat delayed.
 
 Then it will retrieve the `url` from the hashes for this request `id`
 ```javascript
@@ -104,6 +104,8 @@ if (!hashes) {
     handle(id, hashesKey, hashes);
 }
 ```
+
+Note that the onus is on consumers of this service to ensure a unique ID for the request. Naturally Redis `INCR` is recommended on this Redis instance, e.g. on key `fetch:id:seq` to provide a unique sequence number.
 
 ## Handler
 
