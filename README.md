@@ -59,7 +59,7 @@ Note our convention that Redis keys for hashes are postfixed with `:h`
 
 ## Activation
 
-A ready request `id` is pushed to the request queue by some producer, which has prepared the hashes for that request, notably `url`
+A ready request `id` is pushed to the request queue by some producer, which has prepared the hashes for that request, notably the `url`
 
 This service will `brpoplush` that `id`
 ```javascript
@@ -70,6 +70,18 @@ if (!id) {
 ```
 where in-flight requests are pushed to the `busy` queue.
 
+Then it will retrieve the `url` from the hashes for this request `id`
+```javascript
+const hashesKey = [config.namespace, id, 'h'].join(':');
+const hashes = await client.hgetallAsync(hashesKey);
+if (!hashes) {
+    logger.warn('hashes', hashesKey);
+} else {
+    logger.info('hashes url', hashes.url, hashesKey, config.messageExpire);
+    client.expire(hashesKey, config.messageExpire);
+    handle(id, hashesKey, hashes);
+}
+```
 
 ## Handler
 
