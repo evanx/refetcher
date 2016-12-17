@@ -50,6 +50,8 @@ multi.lpush(queue.req, 'undefined');
 ```
 where the `url` is set in hashes for a specific `id` e.g. `1`
 
+Note our convention that Redis keys for queues are postfixed with `:q` and hashes with `:h`
+
 The ready `id` is pushed to the request queue. This service will `brpoplush` that `id`
 ```javascript
 let id = await client.brpoplpushAsync(queue.req, queue.busy, 8);
