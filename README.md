@@ -68,12 +68,18 @@ if (!id) {
 ```
 where in-flight requests are pushed to the `busy` queue.
 
+
+## Handler
+
 The `url` is retrieved from the hashes for this `id` and fetched.
 ```javascript
 const options = {timeout: config.fetchTimeout};
 const res = await fetch(hashes.url, options);
 ```
 where we use the `node-fetch` package for the HTTP request. Note that redirects should followed by default.
+
+
+## Reply
 
 If an OK `200` HTTP response, then the response text is set in Redis, and the `id` pushed to `:res:q` i.e. for notication that the response is ready for that `id`
 ```javascript
