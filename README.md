@@ -81,7 +81,7 @@ Note our convention that Redis keys for hashes are postfixed with `:h`
 
 Some external service can request a fetch via Redis by this service as follows:
 - generate a new unique request `id` e.g. `123` via `INCR fetch:id:seq`
-- set hashes for that request especially `url` e.g. `HSET fetch:123:h url ${url}``
+- set hashes for that request especially `url` e.g. `HSET fetch:123:h url ${url}`
 - push the `id` to the request queue e.g. `LPUSH fetch:req:q 123`
 
 This service will `brpoplush` that `id`
