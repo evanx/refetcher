@@ -79,7 +79,10 @@ Note our convention that Redis keys for hashes are postfixed with `:h`
 
 ## Activation
 
-A ready request `id` is pushed to the request queue by some producer, which has prepared the hashes for that request, notably the `url`
+Some external service request a fetch via Redis as follows:
+- generates a new unique request `id` e.g. `123` via `INCR fetch:id:seq`
+- sets hashes for that request e.g. `HSET fetch:123:h url ${id}``
+- pushes the request `id` to our queue e.g. `LPUSH fetch:req:q 123`
 
 This service will `brpoplush` that `id`
 ```javascript
@@ -90,9 +93,9 @@ if (!id) {
 ```
 where in-flight requests are pushed to the `busy` queue.
 
-Note that only after the `popTimeout` on the blocking pop on the request queue, we will retry an earlier request from the retry queue. Therefore retries have a lesser priority than new requests, and are somewhat delayed.
+Note that only after the `popTimeout` on the blocking pop on the request queue, we will retry an earlier request from the retry queue. Therefore retries have a lesser priority than new requests, and are somewhat delayed i.e. to retry "later." It is possible that the failed request will expire in the meantime. Therefore note that retries may require intervention by your application.
 
-Then it will retrieve the `url` from the hashes for this request `id`
+After popping a request `id` then the service will retrieve the `url` from the hashes for this `id`
 ```javascript
 const hashesKey = [config.namespace, id, 'h'].join(':');
 const hashes = await client.hgetallAsync(hashesKey);
@@ -109,7 +112,7 @@ Note that the onus is on consumers of this service to ensure a unique ID for the
 
 ## Handler
 
-The `url` as retrieved from the hashes for this `id` is fetched i.e. an HTTP request is performed.
+The `url` as retrieved from the hashes for this `id` is fetched i.e. an HTTP request is performed via the network.
 ```javascript
 const res = await fetch(hashes.url, {timeout: config.fetchTimeout});
 ```
@@ -118,7 +121,7 @@ where we use the `node-fetch` package for the HTTP request. Note that redirects 
 
 ## Reply
 
-If an OK `200` HTTP response, then the response text is set in Redis, and the `id` pushed to `:res:q` i.e. to notify a reactive consumer that the response is ready for that `id`
+If an OK `200` HTTP response is received, then the response text is set in Redis, and the `id` pushed to `:res:q` i.e. to notify a reactive consumer that the response is ready for that `id`
 ```javascript
 if (res.status === 200) {
     const text = await res.text();
@@ -142,7 +145,7 @@ Note that consumers who have pushed a request `id` could subscribe to the channe
 
 ## Error handling
 
-Otherwise for a error status i.e. not `200` e.g. `500` or `404` or what you you, we increment a `retry` count and "move" the `id` to the `failed` queue.
+Otherwise for a error status i.e. not `200` e.g. `500` or `404` or what you you, we increment a `retry` count and push the `id` to the `failed` queue.
 ```javascript
 multi.hincrby(hashesKey, 'retry', 1);
 multi.hset(hashesKey, 'limit', config.retryLimit);
@@ -160,3 +163,7 @@ if (retry < config.retryLimit) {
     });
 }
 ```
+
+Note that if a network error occurs e.g. DNS lookup failure or request timeout, the id will be pushed to `:error:q` rather than `:fail:q`
+
+As in the case of the `status` code, the `id` will be pushed to `:retry:q`
