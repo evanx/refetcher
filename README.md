@@ -21,6 +21,8 @@ This service performs the following operations:
 - notify subscribers via Redis pubsub e.g. publish `123` to channel `fetch:res`
 - handle failures, errors and retries e.g. via `fetch:retry:q`
 
+Typically sync services would subscribe to the channel `fetch:res` whereas async services might pull responses from the `:res:q` output queue.
+
 ## Configuration
 
 `config/development.js`
@@ -152,11 +154,6 @@ if (res.status === 200) {
         multi.publish(`${config.namespace}:res`, id);
     });
 ```
-
-Note that consumers who have pushed a request `id` could subscribe to the channel `fetch:res` to be notified when the response is ready. Alternatively:
-- monitor the `:res:q` output queue
-- poll the `status` field of the hashes `:${id}:h`
-- poll if key `:${id}:text` exists
 
 ## Error handling
 
