@@ -20,6 +20,7 @@ This service performs the following operations:
 - set the response headers in Redis e.g. `fetch:123:headers:h` hashes
 - notify subscribers via Redis pubsub e.g. publish `123` to channel `fetch:res`
 - handle failures, errors and retries e.g. via `fetch:retry:q`
+- pause processing when concurrency rate and concurrency limits are exceeded
 
 Typically sync services would subscribe to the channel `fetch:res` whereas async services might pull responses from the `:res:q` output queue.
 
