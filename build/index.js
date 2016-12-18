@@ -10,8 +10,21 @@ let multiExecAsync = (() => {
     };
 })();
 
+let delay = (() => {
+    var _ref2 = _asyncToGenerator(function* (duration) {
+        logger.info('delay');
+        return new Promise(function (resolve) {
+            return setTimeout(resolve, duration);
+        });
+    });
+
+    return function delay(_x3) {
+        return _ref2.apply(this, arguments);
+    };
+})();
+
 let start = (() => {
-    var _ref2 = _asyncToGenerator(function* () {
+    var _ref3 = _asyncToGenerator(function* () {
         state.started = Math.floor(Date.now() / 1000);
         state.pid = process.pid;
         state.instanceId = yield client.incrAsync(`${ config.namespace }:instance:seq`);
@@ -59,9 +72,7 @@ let start = (() => {
                     counters.perMinute.count++;
                 }
                 if (counters.concurrent.count > config.concurrentLimit || counters.perMinute.count > config.perMinuteLimit) {
-                    yield new Promise(function (resolve) {
-                        return setTimeout(resolve, config.delayDuration);
-                    });
+                    yield delay(config.delayDuration);
                 }
             }
         }
@@ -69,12 +80,12 @@ let start = (() => {
     });
 
     return function start() {
-        return _ref2.apply(this, arguments);
+        return _ref3.apply(this, arguments);
     };
 })();
 
 let handle = (() => {
-    var _ref3 = _asyncToGenerator(function* (id, hashesKey, hashes) {
+    var _ref4 = _asyncToGenerator(function* (id, hashesKey, hashes) {
         counters.concurrent.count++;
         try {
             if (!/[0-9]$/.test(id)) {
@@ -143,24 +154,24 @@ let handle = (() => {
         }
     });
 
-    return function handle(_x3, _x4, _x5) {
-        return _ref3.apply(this, arguments);
-    };
-})();
-
-let startTest = (() => {
-    var _ref4 = _asyncToGenerator(function* () {});
-
-    return function startTest() {
+    return function handle(_x4, _x5, _x6) {
         return _ref4.apply(this, arguments);
     };
 })();
 
+let startTest = (() => {
+    var _ref5 = _asyncToGenerator(function* () {});
+
+    return function startTest() {
+        return _ref5.apply(this, arguments);
+    };
+})();
+
 let startDevelopment = (() => {
-    var _ref5 = _asyncToGenerator(function* () {
+    var _ref6 = _asyncToGenerator(function* () {
         logger.info('startDevelopment', config.namespace, queue.req);
         yield Promise.all(Object.keys(testData).map((() => {
-            var _ref6 = _asyncToGenerator(function* (key, index) {
+            var _ref7 = _asyncToGenerator(function* (key, index) {
                 const id = index + 101;
                 const results = yield multiExecAsync(client, function (multi) {
                     testData[key](multi, { id });
@@ -168,25 +179,25 @@ let startDevelopment = (() => {
                 logger.info('results', key, id, results.join(' '));
             });
 
-            return function (_x6, _x7) {
-                return _ref6.apply(this, arguments);
+            return function (_x7, _x8) {
+                return _ref7.apply(this, arguments);
             };
         })()));
         logger.info('llen', queue.req, (yield client.llenAsync(queue.req)));
     });
 
     return function startDevelopment() {
-        return _ref5.apply(this, arguments);
+        return _ref6.apply(this, arguments);
     };
 })();
 
 let end = (() => {
-    var _ref7 = _asyncToGenerator(function* () {
+    var _ref8 = _asyncToGenerator(function* () {
         client.quit();
     });
 
     return function end() {
-        return _ref7.apply(this, arguments);
+        return _ref8.apply(this, arguments);
     };
 })();
 

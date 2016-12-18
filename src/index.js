@@ -41,7 +41,7 @@ const queue = ['req', 'res', 'busy', 'failed', 'errored', 'retry'].reduce((a, v)
     return a;
 }, {});
 
-async delay(duration) {
+async function delay(duration) {
     logger.info('delay');
     return new Promise(resolve => setTimeout(resolve, duration));
 }
