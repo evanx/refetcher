@@ -44,8 +44,11 @@ let start = (() => {
         while (true) {
             let id = yield client.brpoplpushAsync(queue.req, queue.busy, config.popTimeout);
             if (!id) {
-                if (counters.concurrent.count > config.concurrentLimit) {
+                if (counters.concurrent.count < config.concurrentLimit) {
                     id = yield client.rpoplpushAsync(queue.retry, queue.busy);
+                    if (id) {
+                        logger.debug('retry', id);
+                    }
                 }
             }
             if (!id) {
