@@ -13,7 +13,7 @@ Some external service can request a fetch via Redis as follows:
 - push the `id` to the request queue e.g. `LPUSH fetch:req:q 123`
 
 This service performs the following operations:
-- pops a request `id` URL from a Redis queue e.g. `fetch:req:q`
+- pops a request `id` rom a Redis queue e.g. `fetch:req:q`
 - retrieve the `url` for that request from Redis hashes e.g. `fetch:123:h`
 - HTTP fetch that URL using the `node-fetch` package
 - set the response text and headers in Redis
@@ -41,7 +41,7 @@ where all Redis keys will be prefixed with `fetch`
 Incidently we don't actually rate limit the URL fetching, just slow down the process as follows:
 ```javascript
 if (counters.concurrent.count > config.concurrentLimit ||
-    perMinuteCounter.count > config.perMinuteLimit) {
+    counters.perMinute.count > config.perMinuteLimit) {
     await new Promise(resolve => setTimeout(resolve, config.delayDuration));
 }
 ```
