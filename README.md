@@ -121,7 +121,9 @@ if (!id) {
 ```
 where we first check that we are not at the limit of our concurrent requests, especially for retries.
 
-Therefore retries have a lesser priority than new requests, and are somewhat delayed i.e. to retry "later." Note that it is possible that the failed request will expire in the meantime. Therefore retries may require intervention by your application.
+Clear we give retries a lesser priority than new requests, and ensure they are somewhat delayed i.e. to retry "later."
+
+Note that it is possible that the failed request will expire in the meantime. Therefore retries may require intervention by your application.
 
 After popping a request `id` then the service will retrieve the `url` from the hashes for this `id`
 ```javascript
