@@ -18,7 +18,7 @@ This service performs the following operations:
 - HTTP fetch that URL using the `node-fetch` package
 - set the response text in Redis e.g. `fetch:123:text` as per `res.text()`
 - set the response headers in Redis e.g. `fetch:123:headers:h` hashes
-- notify subscribers via Redis pubsub channel e.g. publish `123` to channel `fetch:res`
+- notify subscribers via Redis pubsub e.g. publish `123` to channel `fetch:res`
 - handle failures, errors and retries e.g. via `fetch:retry:q`
 
 ## Configuration
