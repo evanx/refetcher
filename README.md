@@ -111,7 +111,7 @@ let id = await client.brpoplpushAsync(queue.req, queue.busy, config.popTimeout);
 ```
 where in-flight requests are pushed to the `busy` queue.
 
-If no new incoming requests, we might retry an earlier request from the retry queue.
+If no new incoming requests, we might retry an previous failed request from the retry queue.
 ```javascript
 if (!id) {
     if (counters.concurrent.count < config.concurrentLimit) {
