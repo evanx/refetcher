@@ -1,15 +1,20 @@
 # fetch-redis
 
 A microservice for Redis queuing of HTTP requests and responses,
-to simplify services that require async HTTP processing.
+to simplify some services that require async HTTP response processing.
+
+Some external service can request a fetch via Redis as follows:
+- generate a new unique request `id` e.g. `123` via `INCR fetch:id:seq`
+- set hashes for that request especially `url` e.g. `HSET fetch:123:h url ${url}`
+- push the `id` to the request queue e.g. `LPUSH fetch:req:q 123`
 
 This service performs the following operations:
-- pops an HTTP URL from a Redis queue
-- HTTP fetch that URL
-- set the response in Redis
+- pops a request `id` URL from a Redis queue e.g. `fetch:req:q`
+- retrieve the `url` for that request from Redis hashes e.g. `fetch:123:h`
+- HTTP fetch that URL using the `node-fetch` package
+- set the response text and headers in Redis
+- publish the response ready event via Redis pubsub
 - handle failures, errors and retries
-
-Having pushed URLs into a Redis queue for async fetching, consumer services can reactively pop ready responses from Redis. Such application services are thereby simplified.
 
 Since the state of HTTP requests and responses is stored in Redis, consumers are "stateless."
 Therefore multiple consumers can be deployed e.g. for improved reliability and rolling updates.
@@ -79,11 +84,6 @@ Note our convention that Redis keys for hashes are postfixed with `:h`
 
 ## Activation
 
-Some external service can request a fetch via Redis by this service as follows:
-- generate a new unique request `id` e.g. `123` via `INCR fetch:id:seq`
-- set hashes for that request especially `url` e.g. `HSET fetch:123:h url ${url}`
-- push the `id` to the request queue e.g. `LPUSH fetch:req:q 123`
-
 This service will `brpoplush` that `id`
 ```javascript
 let id = await client.brpoplpushAsync(queue.req, queue.busy, config.popTimeout);
@@ -110,6 +110,7 @@ if (!hashes) {
 
 Note that the onus is on consumers of this service to ensure a unique ID for the request. Naturally Redis `INCR` is recommended on this Redis instance, e.g. on key `fetch:id:seq` to provide a unique sequence number.
 
+
 ## Handler
 
 The `url` as retrieved from the hashes for this `id` is fetched i.e. an HTTP request is performed via the network.
@@ -129,7 +130,9 @@ if (res.status === 200) {
     await multiExecAsync(client, multi => {
         multi.hset(hashesKey, 'status', res.status);
         multi.setex(`${config.namespace}:${id}:text`, config.messageExpire, text);
-        multi.hmset(`${config.namespace}:${id}:headers:h`, res.headers._headers);
+        Object.keys(res.headers._headers).forEach(key => {
+            multi.hset(`${config.namespace}:${id}:headers:h`, key, res.headers.get(key).toString());
+        });
         multi.expire(`${config.namespace}:${id}:headers:h`, config.messageExpire);
         multi.lpush(queue.res, id);
         multi.ltrim(queue.res, config.queueLimit);
