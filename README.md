@@ -125,7 +125,7 @@ Clear we give retries a lesser priority than new requests, and ensure they are s
 
 Note that it is possible that the failed request will expire in the meantime. Therefore persistent retries may require intervention by your application e.g. to push a failed request `id` into `:req:q` again.
 
-After popping a request `id` - the service will retrieve the `url` from the hashes for this `id`
+After popping a request `id`, the service will retrieve the `url` from the hashes for this `id`
 ```javascript
 const hashesKey = [config.namespace, id, 'h'].join(':');
 const hashes = await client.hgetallAsync(hashesKey);
