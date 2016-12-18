@@ -7,7 +7,8 @@ module.exports = {
     messageExpire: 60,
     retryLimit: 3,
     perMinuteLimit: 60,
-    concurrentLimit: 2,
-    delayLimit: 2000,        
+    concurrentLimit: 16,
+    rateDelayLimit: 2000,
+    concurrentDelay: 2000,
     loggerLevel: 'info'
 };
