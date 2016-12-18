@@ -6,5 +6,8 @@ module.exports = {
     fetchTimeout: 6000,
     messageExpire: 60,
     retryLimit: 3,
+    perMinuteLimit: 60,
+    concurrentLimit: 2,
+    delayDuration: 2000,        
     loggerLevel: 'info'
 };

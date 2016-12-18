@@ -6,12 +6,29 @@ const Promise = require('bluebird');
 const envName = process.env.NODE_ENV || 'production';
 const config = require(process.env.configFile || '../config/' + envName);
 const state = {};
-
 const redis = require('redis');
 const client = Promise.promisifyAll(redis.createClient());
 
 const logger = require('winston');
 logger.level = config.loggerLevel || 'info';
+
+class Counter {
+    constructor() {
+        this.count = 0;
+    }
+}
+
+class TimestampedCounter {
+    constructor() {
+        this.timestamp = Date.now();
+        this.count = 0;
+    }
+}
+
+const counters = {
+    concurrent: new Counter(),
+    perMinute: new TimestampedCounter()
+};
 
 async function multiExecAsync(client, multiFunction) {
     const multi = client.multi();
@@ -67,12 +84,22 @@ async function start() {
                 client.expire(hashesKey, config.messageExpire);
                 handle(id, hashesKey, hashes);
             }
+            if (Date.now() > counters.perMinute.timestamp + 60) {
+                counters.perMinute = new TimestampedCounter();
+            } else {
+                counters.perMinute.count++;
+            }
+            if (counters.concurrent.count > config.concurrentLimit ||
+                counters.perMinute.count > config.perMinuteLimit) {
+                await new Promise(resolve => setTimeout(resolve, config.delayDuration));
+            }
         }
     }
     return end();
 }
 
 async function handle(id, hashesKey, hashes) {
+    counters.concurrent.count++;
     try {
         if (!/[0-9]$/.test(id)) {
             throw new Error(`invalid id ${id}`);
@@ -135,6 +162,8 @@ async function handle(id, hashesKey, hashes) {
             });
             logger.debug('retry llen', llen, lrange);
         }
+    } finally {
+        counters.concurrent.count--;
     }
 }
 

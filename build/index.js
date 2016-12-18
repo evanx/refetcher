@@ -53,6 +53,16 @@ let start = (() => {
                     client.expire(hashesKey, config.messageExpire);
                     handle(id, hashesKey, hashes);
                 }
+                if (Date.now() > counters.perMinute.timestamp + 60) {
+                    counters.perMinute = new TimestampedCounter();
+                } else {
+                    counters.perMinute.count++;
+                }
+                if (counters.concurrent.count > config.concurrentLimit || counters.perMinute.count > config.perMinuteLimit) {
+                    yield new Promise(function (resolve) {
+                        return setTimeout(resolve, config.delayDuration);
+                    });
+                }
             }
         }
         return end();
@@ -65,6 +75,7 @@ let start = (() => {
 
 let handle = (() => {
     var _ref3 = _asyncToGenerator(function* (id, hashesKey, hashes) {
+        counters.concurrent.count++;
         try {
             if (!/[0-9]$/.test(id)) {
                 throw new Error(`invalid id ${ id }`);
@@ -127,6 +138,8 @@ let handle = (() => {
                 });
                 logger.debug('retry llen', llen, lrange);
             }
+        } finally {
+            counters.concurrent.count--;
         }
     });
 
@@ -187,12 +200,29 @@ const Promise = require('bluebird');
 const envName = process.env.NODE_ENV || 'production';
 const config = require(process.env.configFile || '../config/' + envName);
 const state = {};
-
 const redis = require('redis');
 const client = Promise.promisifyAll(redis.createClient());
 
 const logger = require('winston');
 logger.level = config.loggerLevel || 'info';
+
+class Counter {
+    constructor() {
+        this.count = 0;
+    }
+}
+
+class TimestampedCounter {
+    constructor() {
+        this.timestamp = Date.now();
+        this.count = 0;
+    }
+}
+
+const counters = {
+    concurrent: new Counter(),
+    perMinute: new TimestampedCounter()
+};
 
 const queue = ['req', 'res', 'busy', 'failed', 'errored', 'retry'].reduce((a, v) => {
     a[v] = `${ config.namespace }:${ v }:q`;

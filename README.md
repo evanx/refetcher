@@ -1,7 +1,11 @@
 # fetch-redis
 
-A microservice for Redis queuing of HTTP requests and responses,
-to simplify some services that require async HTTP response processing.
+A microservice for Redis-based streaming of HTTP requests and responses
+for simplification and scaling of applicable services
+that consume HTTP responses for async processing.
+
+Since the state of HTTP requests and responses is stored in Redis,
+multiple response handlers can be deployed e.g. for improved reliability and rolling updates.
 
 Some external service can request a fetch via Redis as follows:
 - generate a new unique request `id` e.g. `123` via `INCR fetch:id:seq`
@@ -16,10 +20,6 @@ This service performs the following operations:
 - publish the response ready event via Redis pubsub
 - handle failures, errors and retries
 
-Since the state of HTTP requests and responses is stored in Redis, handlers are "stateless."
-Therefore multiple response handlers can be deployed e.g. for improved reliability and rolling updates.
-
-
 ## Configuration
 
 `config/development.js`
@@ -30,11 +30,21 @@ popTimeout: 1,
 messageExpire: 60,
 queueLimit: 1000,
 fetchTimeout: 6000,
+perMinuteLimit: 60,
+concurrentLimit: 2,
 retryLimit: 2,
+delayDuration: 2000,
 loggerLevel: 'debug'
 ```
 where all Redis keys will be prefixed with `fetch`
 
+Incidently we don't actually rate limit the URL fetching, just slow down the process as follows:
+```javascript
+if (counters.concurrent.count > config.concurrentLimit ||
+    perMinuteCounter.count > config.perMinuteLimit) {
+    await new Promise(resolve => setTimeout(resolve, config.delayDuration));
+}
+```
 
 ## Queues
 
