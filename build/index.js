@@ -12,7 +12,7 @@ let multiExecAsync = (() => {
 
 let delay = (() => {
     var _ref2 = _asyncToGenerator(function* (duration) {
-        logger.info('delay');
+        logger.debug('delay', duration);
         return new Promise(function (resolve) {
             return setTimeout(resolve, duration);
         });
@@ -66,12 +66,13 @@ let start = (() => {
                     client.expire(hashesKey, config.messageExpire);
                     handle(id, hashesKey, hashes);
                 }
-                if (Date.now() > counters.perMinute.timestamp + 60) {
+                if (Date.now() > counters.perMinute.timestamp + 60000) {
                     counters.perMinute = new TimestampedCounter();
                 } else {
                     counters.perMinute.count++;
                 }
                 if (counters.concurrent.count > config.concurrentLimit || counters.perMinute.count > config.perMinuteLimit) {
+                    logger.info('delay', counters.concurrent.count, counters.perMinute.count);
                     yield delay(config.delayDuration);
                 }
             }
@@ -87,6 +88,7 @@ let start = (() => {
 let handle = (() => {
     var _ref4 = _asyncToGenerator(function* (id, hashesKey, hashes) {
         counters.concurrent.count++;
+        logger.debug('handle', id, counters.concurrent.count, counters.perMinute.count);
         try {
             if (!/[0-9]$/.test(id)) {
                 throw new Error(`invalid id ${ id }`);
