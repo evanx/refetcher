@@ -94,136 +94,137 @@ async function start() {
             } else {
                 counters.perMinute.count++;
             }
-            if (counters.concurrent.count > config.concurrentLimit ||
-                counters.perMinute.count > config.perMinuteLimit) {
-                    logger.info('delay', counters.concurrent.count, counters.perMinute.count);
-                    await delay(config.delayLimit);
-                }
+            while (counters.concurrent.count > config.concurrentLimit) {
+                await delay(config.concurrentDelayLimit);
+            }
+            if (counters.perMinute.count > config.perMinuteLimit) {
+                await delay(config.rateDelayLimit);
             }
         }
-        return end();
     }
+    return end();
+}
 
-    async function handle(id, hashesKey, hashes) {
-        counters.concurrent.count++;
-        logger.debug('handle', id, counters.concurrent.count, counters.perMinute.count);
-        try {
-            if (!/[0-9]$/.test(id)) {
-                throw new Error(`invalid id ${id}`);
-            }
-            if (!hashes.url || hashes.url.endsWith('undefined')) {
-                throw new Error(`invalid id ${id} url ${hashes.url}`);
-            }
-            const options = {timeout: config.fetchTimeout};
-            const res = await fetch(hashes.url, options);
-            if (res.status === 200) {
-                const text = await res.text();
-                logger.debug('text', text.length, hashesKey);
-                await multiExecAsync(client, multi => {
-                    Object.keys(res.headers._headers).forEach(key => {
-                        multi.hset(`${config.namespace}:${id}:headers:h`, key, res.headers.get(key).toString());
-                    });
-                    multi.expire(`${config.namespace}:${id}:headers:h`, config.messageExpire);
-                    multi.hset(hashesKey, 'status', res.status);
-                    multi.hset(hashesKey, 'content-type', res.headers.get('content-type'));
-                    multi.setex(`${config.namespace}:${id}:text`, config.messageExpire, text);
-                    multi.lpush(queue.res, id);
-                    multi.ltrim(queue.res, 0, config.queueLimit);
-                    multi.lrem(queue.busy, 1, id);
-                    multi.publish(`${config.namespace}:res`, id);
+async function handle(id, hashesKey, hashes) {
+    counters.concurrent.count++;
+    logger.debug('handle', id, counters.concurrent.count, counters.perMinute.count);
+    try {
+        if (!/[0-9]$/.test(id)) {
+            throw new Error(`invalid id ${id}`);
+        }
+        if (!hashes.url || hashes.url.endsWith('undefined')) {
+            throw new Error(`invalid id ${id} url ${hashes.url}`);
+        }
+        const options = {timeout: config.fetchTimeout};
+        const res = await fetch(hashes.url, options);
+        if (res.status === 200) {
+            const text = await res.text();
+            logger.debug('text', text.length, hashesKey);
+            await multiExecAsync(client, multi => {
+                Object.keys(res.headers._headers).forEach(key => {
+                    multi.hset(`${config.namespace}:${id}:headers:h`, key, res.headers.get(key).toString());
                 });
-            } else {
-                const [retry] = await multiExecAsync(client, multi => {
-                    multi.hincrby(hashesKey, 'retry', 1);
-                    multi.hset(hashesKey, 'limit', config.retryLimit);
-                    multi.hset(hashesKey, 'status', res.status);
-                    multi.lpush(queue.failed, id);
-                    multi.ltrim(queue.failed, 0, config.queueLimit);
-                    multi.lrem(queue.busy, 1, id);
-                    multi.publish(`${config.namespace}:res`, id);
-                });
-                logger.info('status', res.status, config.retryLimit, {id, hashes, retry});
-                if (retry < config.retryLimit) {
-                    const [llen] = await multiExecAsync(client, multi => {
-                        multi.lpush(queue.retry, id);
-                        multi.ltrim(queue.retry, 0, config.queueLimit);
-                    });
-                    logger.debug('retry llen', llen);
-                }
-            }
-        } catch (err) {
+                multi.expire(`${config.namespace}:${id}:headers:h`, config.messageExpire);
+                multi.hset(hashesKey, 'status', res.status);
+                multi.hset(hashesKey, 'content-type', res.headers.get('content-type'));
+                multi.setex(`${config.namespace}:${id}:text`, config.messageExpire, text);
+                multi.lpush(queue.res, id);
+                multi.ltrim(queue.res, 0, config.queueLimit);
+                multi.lrem(queue.busy, 1, id);
+                multi.publish(`${config.namespace}:res`, id);
+            });
+        } else {
             const [retry] = await multiExecAsync(client, multi => {
                 multi.hincrby(hashesKey, 'retry', 1);
                 multi.hset(hashesKey, 'limit', config.retryLimit);
-                multi.hset(hashesKey, 'error', err.message);
-                multi.lpush(queue.errored, id);
-                multi.ltrim(queue.errored, 0, config.queueLimit);
+                multi.hset(hashesKey, 'status', res.status);
+                multi.lpush(queue.failed, id);
+                multi.ltrim(queue.failed, 0, config.queueLimit);
                 multi.lrem(queue.busy, 1, id);
+                multi.publish(`${config.namespace}:res`, id);
             });
-            logger.warn('error', err.message, config.retryLimit, {id, hashes, retry});
+            logger.info('status', res.status, config.retryLimit, {id, hashes, retry});
             if (retry < config.retryLimit) {
-                const [llen, lrange] = await multiExecAsync(client, multi => {
+                const [llen] = await multiExecAsync(client, multi => {
                     multi.lpush(queue.retry, id);
-                    multi.lrange(queue.retry, 0, 5);
                     multi.ltrim(queue.retry, 0, config.queueLimit);
                 });
-                logger.debug('retry llen', llen, lrange);
+                logger.debug('retry llen', llen);
             }
-        } finally {
-            counters.concurrent.count--;
         }
-    }
-
-    async function startTest() {
-    }
-
-    const testData = {
-        ok: (multi, ctx) => {
-            multi.hset(`${config.namespace}:${ctx.id}:h`, 'url', 'http://httpstat.us/200');
-            multi.lpush(queue.req, ctx.id);
-        },
-        invalidId: (multi, ctx) => {
-            multi.hset(`${config.namespace}:undefined:h`, 'url', 'http://httpstat.us/200');
-            multi.lpush(queue.req, 'undefined');
-        },
-        missingUrl: (multi, ctx) => {
-            multi.hset(`${config.namespace}:${ctx.id}:h`, 'undefined', 'http://httpstat.us/200');
-            multi.lpush(queue.req, ctx.id);
-        },
-        timeout: (multi, ctx) => {
-            multi.hset(`${config.namespace}:${ctx.id}:h`, 'url', 'https://com.invalid');
-            multi.lpush(queue.req, ctx.id);
-        },
-        errorUrl: (multi, ctx) => {
-            multi.hset(`${config.namespace}:${ctx.id}:h`, 'url', 'http://httpstat.us/500');
-            multi.lpush(queue.req, ctx.id);
-        },
-        invalidUrl: (multi, ctx) => {
-            multi.hset(`${config.namespace}:${ctx.id}:h`, 'url', 'http://undefined');
-            multi.lpush(queue.req, ctx.id);
-        }
-    };
-
-    async function startDevelopment() {
-        logger.info('startDevelopment', config.namespace, queue.req);
-        await Promise.all(Object.keys(testData).map(async (key, index) => {
-            const id = index + 101;
-            const results = await multiExecAsync(client, multi => {
-                testData[key](multi, {id});
+    } catch (err) {
+        const [retry] = await multiExecAsync(client, multi => {
+            multi.hincrby(hashesKey, 'retry', 1);
+            multi.hset(hashesKey, 'limit', config.retryLimit);
+            multi.hset(hashesKey, 'error', err.message);
+            multi.lpush(queue.errored, id);
+            multi.ltrim(queue.errored, 0, config.queueLimit);
+            multi.lrem(queue.busy, 1, id);
+        });
+        logger.warn('error', err.message, config.retryLimit, {id, hashes, retry});
+        if (retry < config.retryLimit) {
+            const [llen, lrange] = await multiExecAsync(client, multi => {
+                multi.lpush(queue.retry, id);
+                multi.lrange(queue.retry, 0, 5);
+                multi.ltrim(queue.retry, 0, config.queueLimit);
             });
-            logger.info('results', key, id, results.join(' '));
-        }));
-        logger.info('llen', queue.req, await client.llenAsync(queue.req));
+            logger.debug('retry llen', llen, lrange);
+        }
+    } finally {
+        counters.concurrent.count--;
     }
+}
 
-    async function end() {
-        client.quit();
+async function startTest() {
+}
+
+const testData = {
+    ok: (multi, ctx) => {
+        multi.hset(`${config.namespace}:${ctx.id}:h`, 'url', 'http://httpstat.us/200');
+        multi.lpush(queue.req, ctx.id);
+    },
+    invalidId: (multi, ctx) => {
+        multi.hset(`${config.namespace}:undefined:h`, 'url', 'http://httpstat.us/200');
+        multi.lpush(queue.req, 'undefined');
+    },
+    missingUrl: (multi, ctx) => {
+        multi.hset(`${config.namespace}:${ctx.id}:h`, 'undefined', 'http://httpstat.us/200');
+        multi.lpush(queue.req, ctx.id);
+    },
+    timeout: (multi, ctx) => {
+        multi.hset(`${config.namespace}:${ctx.id}:h`, 'url', 'https://com.invalid');
+        multi.lpush(queue.req, ctx.id);
+    },
+    errorUrl: (multi, ctx) => {
+        multi.hset(`${config.namespace}:${ctx.id}:h`, 'url', 'http://httpstat.us/500');
+        multi.lpush(queue.req, ctx.id);
+    },
+    invalidUrl: (multi, ctx) => {
+        multi.hset(`${config.namespace}:${ctx.id}:h`, 'url', 'http://undefined');
+        multi.lpush(queue.req, ctx.id);
     }
+};
 
-    start().then(() => {
-        logger.info('started');
-    }).catch(err => {
-        logger.error(err);
-        end();
-    }).finally(() => {
-    });
+async function startDevelopment() {
+    logger.info('startDevelopment', config.namespace, queue.req);
+    await Promise.all(Object.keys(testData).map(async (key, index) => {
+        const id = index + 101;
+        const results = await multiExecAsync(client, multi => {
+            testData[key](multi, {id});
+        });
+        logger.info('results', key, id, results.join(' '));
+    }));
+    logger.info('llen', queue.req, await client.llenAsync(queue.req));
+}
+
+async function end() {
+    client.quit();
+}
+
+start().then(() => {
+    logger.info('started');
+}).catch(err => {
+    logger.error(err);
+    end();
+}).finally(() => {
+});
