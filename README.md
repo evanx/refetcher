@@ -136,7 +136,7 @@ if (!hashes) {
 }
 ```
 
-Note that it is possible that the hashes of a request from `retry:q` will have expired. Therefore persistent retries may require intervention by your application e.g. to push a failed request `id` into `:req:q` again.
+Note that it is possible that the hashes of a request from `retry:q` will have expired. Therefore persistent retries may require intervention by your application.
 
 Note that the onus is on consumers of this service to ensure a unique ID for the request. Naturally Redis `INCR` is recommended on this Redis instance, e.g. on key `fetch:id:seq` to provide a unique sequence number.
 
