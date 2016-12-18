@@ -105,13 +105,13 @@ Note our convention that Redis keys for hashes are postfixed with `:h`
 
 ## Activation
 
-Note that the onus is on drivers of this service to ensure a unique ID for the request. Naturally Redis `INCR` is recommended on this Redis instance, e.g. on key `fetch:id:seq` to provide a unique sequence number.
-
 This service will `brpoplush` the next `id` as follows.
 ```javascript
 let id = await client.brpoplpushAsync(queue.req, queue.busy, config.popTimeout);
 ```
 where in-flight requests are pushed to the `busy` queue.
+
+Note that the onus is on drivers of this service to ensure a unique ID for the request. Naturally Redis `INCR` is recommended on this Redis instance, e.g. on key `fetch:id:seq` to provide a unique sequence number.
 
 If no new incoming requests, we might retry an previous failed request from the retry queue.
 ```javascript
