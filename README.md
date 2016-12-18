@@ -123,8 +123,6 @@ where we first check that we are not at the limit of our concurrent requests, es
 
 Clear we give retries a lesser priority than new requests, and ensure they are somewhat delayed i.e. to retry "later."
 
-Note that it is possible that the failed request will expire in the meantime. Therefore persistent retries may require intervention by your application e.g. to push a failed request `id` into `:req:q` again.
-
 After popping a request `id`, the service will retrieve the `url` from the hashes for this `id`
 ```javascript
 const hashesKey = [config.namespace, id, 'h'].join(':');
@@ -137,6 +135,8 @@ if (!hashes) {
     handle(id, hashesKey, hashes);
 }
 ```
+
+Note that it is possible that the failed request will expire in the meantime. Therefore persistent retries may require intervention by your application e.g. to push a failed request `id` into `:req:q` again.
 
 Note that the onus is on consumers of this service to ensure a unique ID for the request. Naturally Redis `INCR` is recommended on this Redis instance, e.g. on key `fetch:id:seq` to provide a unique sequence number.
 
