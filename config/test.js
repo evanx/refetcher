@@ -9,6 +9,6 @@ module.exports = {
     perMinuteLimit: 60,
     concurrentLimit: 2,
     rateDelayLimit: 2000,
-    concurrentDelayLimit: 2000,
+    concurrentDelay: 2000,
     loggerLevel: 'debug'
 };

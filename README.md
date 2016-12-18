@@ -38,13 +38,18 @@ perMinuteLimit: 60,
 concurrentLimit: 2,
 retryLimit: 2,
 rateDelayLimit: 2000,
-concurrentDelayLimit: 2000,
+concurrentDelay: 2000,
 loggerLevel: 'debug'
 ```
 where all Redis keys will be prefixed with `fetch`
 
 Incidently we don't necessarily actually rate limit the URL fetching, just slow down the process as follows:
 ```javascript
+if (Date.now() > counters.perMinute.timestamp + 60000) {
+    counters.perMinute = new TimestampedCounter();
+} else {
+    counters.perMinute.count++;
+}
 if (counters.perMinute.count > config.perMinuteLimit) {
     await delay(config.rateDelayLimit);
 }

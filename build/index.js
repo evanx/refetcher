@@ -66,15 +66,17 @@ let start = (() => {
                     client.expire(hashesKey, config.messageExpire);
                     handle(id, hashesKey, hashes);
                 }
+                while (counters.concurrent.count > config.concurrentLimit) {
+                    logger.info('concurrent delay', config.concurrentDelay, counters.concurrent.count);
+                    yield delay(config.concurrentDelay);
+                }
                 if (Date.now() > counters.perMinute.timestamp + 60000) {
                     counters.perMinute = new TimestampedCounter();
                 } else {
                     counters.perMinute.count++;
                 }
-                while (counters.concurrent.count > config.concurrentLimit) {
-                    yield delay(config.concurrentDelayLimit);
-                }
                 if (counters.perMinute.count > config.perMinuteLimit) {
+                    logger.info('rate delay', config.rateDelayLimit, config.perMinuteLimit);
                     yield delay(config.rateDelayLimit);
                 }
             }

@@ -89,15 +89,17 @@ async function start() {
                 client.expire(hashesKey, config.messageExpire);
                 handle(id, hashesKey, hashes);
             }
+            while (counters.concurrent.count > config.concurrentLimit) {
+                logger.info('concurrent delay', config.concurrentDelay, counters.concurrent.count);
+                await delay(config.concurrentDelay);
+            }
             if (Date.now() > counters.perMinute.timestamp + 60000) {
                 counters.perMinute = new TimestampedCounter();
             } else {
                 counters.perMinute.count++;
             }
-            while (counters.concurrent.count > config.concurrentLimit) {
-                await delay(config.concurrentDelayLimit);
-            }
             if (counters.perMinute.count > config.perMinuteLimit) {
+                logger.info('rate delay', config.rateDelayLimit, config.perMinuteLimit);
                 await delay(config.rateDelayLimit);
             }
         }
