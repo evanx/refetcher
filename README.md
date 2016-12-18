@@ -105,7 +105,9 @@ Note our convention that Redis keys for hashes are postfixed with `:h`
 
 ## Activation
 
-This service will `brpoplush` that `id`
+Note that the onus is on drivers of this service to ensure a unique ID for the request. Naturally Redis `INCR` is recommended on this Redis instance, e.g. on key `fetch:id:seq` to provide a unique sequence number.
+
+This service will `brpoplush` the next `id` as follows.
 ```javascript
 let id = await client.brpoplpushAsync(queue.req, queue.busy, config.popTimeout);
 ```
@@ -137,9 +139,6 @@ if (!hashes) {
 ```
 
 Note that it is possible that the hashes of a request from `retry:q` will have expired, or because of delays when the load exceeds configured limits. Therefore persistent retries may require intervention by your application.
-
-Note that the onus is on consumers of this service to ensure a unique ID for the request. Naturally Redis `INCR` is recommended on this Redis instance, e.g. on key `fetch:id:seq` to provide a unique sequence number.
-
 
 ## Handler
 
