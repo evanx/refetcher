@@ -108,15 +108,20 @@ Note our convention that Redis keys for hashes are postfixed with `:h`
 This service will `brpoplush` that `id`
 ```javascript
 let id = await client.brpoplpushAsync(queue.req, queue.busy, config.popTimeout);
+```
+where in-flight requests are pushed to the `busy` queue.
+
+If no new incoming requests, we might retry an earlier request from the retry queue.
+```javascript
 if (!id) {
     if (counters.concurrent.count < config.concurrentLimit) {
         id = await client.rpoplpushAsync(queue.retry, queue.busy);
     }
 }
 ```
-where in-flight requests are pushed to the `busy` queue.
+where we first check that we are not at the limit of our concurrent requests.
 
-Note that only after a timeout on the blocking pop on the request queue i.e. no new incoming requests, and only if we are not at our concurrency limit, will we retry an earlier request from the retry queue. Therefore retries have a lesser priority than new requests, and are somewhat delayed i.e. to retry "later." It is possible that the failed request will expire in the meantime. Therefore note that retries may require intervention by your application.
+Therefore retries have a lesser priority than new requests, and are somewhat delayed i.e. to retry "later." Note that it is possible that the failed request will expire in the meantime. Therefore retries may require intervention by your application.
 
 After popping a request `id` then the service will retrieve the `url` from the hashes for this `id`
 ```javascript
