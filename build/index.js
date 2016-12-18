@@ -73,7 +73,7 @@ let start = (() => {
                 }
                 if (counters.concurrent.count > config.concurrentLimit || counters.perMinute.count > config.perMinuteLimit) {
                     logger.info('delay', counters.concurrent.count, counters.perMinute.count);
-                    yield delay(config.delayDuration);
+                    yield delay(config.delayLimit);
                 }
             }
         }

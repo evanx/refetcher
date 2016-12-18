@@ -8,6 +8,6 @@ module.exports = {
     retryLimit: 5,
     perMinuteLimit: 60,
     concurrentLimit: 2,
-    delayDuration: 2000,
+    delayLimit: 2000,
     loggerLevel: 'debug'
 };

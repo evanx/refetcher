@@ -97,7 +97,7 @@ async function start() {
             if (counters.concurrent.count > config.concurrentLimit ||
                 counters.perMinute.count > config.perMinuteLimit) {
                     logger.info('delay', counters.concurrent.count, counters.perMinute.count);
-                    await delay(config.delayDuration);
+                    await delay(config.delayLimit);
                 }
             }
         }

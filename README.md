@@ -36,19 +36,19 @@ fetchTimeout: 6000,
 perMinuteLimit: 60,
 concurrentLimit: 2,
 retryLimit: 2,
-delayDuration: 2000,
+delayLimit: 2000,
 loggerLevel: 'debug'
 ```
 where all Redis keys will be prefixed with `fetch`
 
-Incidently we don't actually rate limit the URL fetching, just slow down the process as follows:
+Incidently we don't necessarily actually rate limit the URL fetching, just slow down the process as follows:
 ```javascript
 if (counters.concurrent.count > config.concurrentLimit ||
     counters.perMinute.count > config.perMinuteLimit) {
-    await delay(config.delayDuration);
+    await delay(config.delayLimit);
 }
 ```
-where we pause this service for a configured delay e.g. 2 seconds, before the next fetch operation.
+where we pause this service for a configured `delayLimit` e.g. 2 seconds, before the next fetch operation.
 
 ## Queues
 
