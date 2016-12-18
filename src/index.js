@@ -41,6 +41,11 @@ const queue = ['req', 'res', 'busy', 'failed', 'errored', 'retry'].reduce((a, v)
     return a;
 }, {});
 
+async delay(duration) {
+    logger.info('delay');
+    return new Promise(resolve => setTimeout(resolve, duration));
+}
+
 async function start() {
     state.started = Math.floor(Date.now()/1000);
     state.pid = process.pid;
@@ -91,7 +96,7 @@ async function start() {
             }
             if (counters.concurrent.count > config.concurrentLimit ||
                 counters.perMinute.count > config.perMinuteLimit) {
-                await new Promise(resolve => setTimeout(resolve, config.delayDuration));
+                    await delay(config.delayDuration);
             }
         }
     }

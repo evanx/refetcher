@@ -45,9 +45,10 @@ Incidently we don't actually rate limit the URL fetching, just slow down the pro
 ```javascript
 if (counters.concurrent.count > config.concurrentLimit ||
     counters.perMinute.count > config.perMinuteLimit) {
-    await new Promise(resolve => setTimeout(resolve, config.delayDuration));
+    await delay(config.delayDuration);
 }
 ```
+where we pause this service for a configured delay before the next fetch operation.
 
 ## Queues
 
