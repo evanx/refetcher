@@ -109,12 +109,14 @@ This service will `brpoplush` that `id`
 ```javascript
 let id = await client.brpoplpushAsync(queue.req, queue.busy, config.popTimeout);
 if (!id) {
-    id = await client.rpoplpushAsync(queue.retry, queue.busy);
+    if (counters.concurrent.count < config.concurrentLimit) {
+        id = await client.rpoplpushAsync(queue.retry, queue.busy);
+    }
 }
 ```
 where in-flight requests are pushed to the `busy` queue.
 
-Note that only after the `popTimeout` on the blocking pop on the request queue, we will retry an earlier request from the retry queue. Therefore retries have a lesser priority than new requests, and are somewhat delayed i.e. to retry "later." It is possible that the failed request will expire in the meantime. Therefore note that retries may require intervention by your application.
+Note that only after a timeout on the blocking pop on the request queue i.e. no new incoming requests, and only if we are not at our concurrency limit, will we retry an earlier request from the retry queue. Therefore retries have a lesser priority than new requests, and are somewhat delayed i.e. to retry "later." It is possible that the failed request will expire in the meantime. Therefore note that retries may require intervention by your application.
 
 After popping a request `id` then the service will retrieve the `url` from the hashes for this `id`
 ```javascript

@@ -67,7 +67,9 @@ async function start() {
     while (true) {
         let id = await client.brpoplpushAsync(queue.req, queue.busy, config.popTimeout);
         if (!id) {
-            id = await client.rpoplpushAsync(queue.retry, queue.busy);
+            if (counters.concurrent.count > config.concurrentLimit) {
+                id = await client.rpoplpushAsync(queue.retry, queue.busy);
+            }
         }
         if (!id) {
             logger.debug('queue empty', queue.req);
@@ -89,7 +91,7 @@ async function start() {
                 client.expire(hashesKey, config.messageExpire);
                 handle(id, hashesKey, hashes);
             }
-            while (counters.concurrent.count > config.concurrentLimit) {
+            if (counters.concurrent.count > config.concurrentLimit) {
                 logger.info('concurrent delay', config.concurrentDelay, counters.concurrent.count);
                 await delay(config.concurrentDelay);
             }
