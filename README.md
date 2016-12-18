@@ -123,7 +123,7 @@ where we first check that we are not at the limit of our concurrent requests, es
 
 Clear we give retries a lesser priority than new requests, and ensure they are somewhat delayed i.e. to retry "later."
 
-Note that it is possible that the failed request will expire in the meantime. Therefore persistent retries may require intervention by your application e.g. to push them into `:req:q` again.
+Note that it is possible that the failed request will expire in the meantime. Therefore persistent retries may require intervention by your application e.g. to push a failed request `id` into `:req:q` again.
 
 After popping a request `id` then the service will retrieve the `url` from the hashes for this `id`
 ```javascript
