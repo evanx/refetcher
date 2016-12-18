@@ -13,12 +13,13 @@ Some external service can request a fetch via Redis as follows:
 - push the `id` to the request queue e.g. `LPUSH fetch:req:q 123`
 
 This service performs the following operations:
-- pops a request `id` rom a Redis queue e.g. `fetch:req:q`
+- pops a request `id` from its Redis input queue e.g. `123` from `fetch:req:q`
 - retrieve the `url` for that request from Redis hashes e.g. `fetch:123:h`
 - HTTP fetch that URL using the `node-fetch` package
-- set the response text and headers in Redis
-- publish the response ready event via Redis pubsub
-- handle failures, errors and retries
+- set the response text in Redis e.g. `fetch:123:text` as per `res.text()`
+- set the response headers in Redis e.g. `fetch:123:headers:h` hashes
+- publish the response ready event via Redis pubsub channel e.g. `123` to channel `fetch:res`
+- handle failures, errors and retries e.g. via `fetch:retry:q`
 
 ## Configuration
 
