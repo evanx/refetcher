@@ -13,7 +13,7 @@ Some external service can request a fetch via Redis as follows:
 - push the `id` to the request queue e.g. `LPUSH fetch:req:q 123`
 
 This service performs the following operations:
-- pops a request `id` from its Redis input queue e.g. `123` from `fetch:req:q`
+- pops the next request `id` from its Redis input queue e.g. `123` from `fetch:req:q`
 - retrieve the `url` for that request from Redis hashes e.g. `fetch:123:h`
 - HTTP fetch that URL using the `node-fetch` package
 - set the response text in Redis e.g. `fetch:123:text` as per `res.text()`
