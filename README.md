@@ -16,8 +16,9 @@ This service performs the following operations:
 - publish the response ready event via Redis pubsub
 - handle failures, errors and retries
 
-Since the state of HTTP requests and responses is stored in Redis, consumers are "stateless."
-Therefore multiple consumers can be deployed e.g. for improved reliability and rolling updates.
+Since the state of HTTP requests and responses is stored in Redis, handlers are "stateless."
+Therefore multiple response handlers can be deployed e.g. for improved reliability and rolling updates.
+
 
 ## Configuration
 
