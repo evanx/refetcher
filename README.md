@@ -48,7 +48,7 @@ if (counters.concurrent.count > config.concurrentLimit ||
     await delay(config.delayDuration);
 }
 ```
-where we pause this service for a configured delay before the next fetch operation.
+where we pause this service for a configured delay e.g. 2 seconds, before the next fetch operation.
 
 ## Queues
 
