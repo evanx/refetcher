@@ -1,4 +1,4 @@
-# fetch-redis
+# refetcher
 
 A microservice for Redis-based streaming of HTTP requests and responses
 for simplification and scaling of applicable services
@@ -26,20 +26,7 @@ Typically sync services would subscribe to the channel `fetch:res` whereas async
 
 ## Configuration
 
-`config/development.js`
 ```javascript
-namespace: 'fetch',
-processExpire: 60,
-popTimeout: 1,
-messageExpire: 60,
-queueLimit: 1000,
-fetchTimeout: 6000,
-perMinuteLimit: 60,
-concurrentLimit: 2,
-retryLimit: 2,
-rateDelayLimit: 2000,
-concurrentDelay: 2000,
-loggerLevel: 'debug'
 ```
 where all Redis keys will be prefixed with `fetch`
 
@@ -59,55 +46,16 @@ where we pause this service for a configured `delayLimit` e.g. 2 seconds, before
 ## Queues
 
 ```javascript
-const queue = ['req', 'res', 'busy', 'failed', 'errored', 'retry'].reduce((a, v) => {
-    a[v] = `${config.namespace}:${v}:q`;
-    return a;
-}, {});
+const queueKeys = reduceKeys(
+    ['req', 'res', 'busy', 'failed', 'errored', 'retry'],
+    key => `${config.namespace}:${key}:q`
+);
 ```
-
-Note our convention that Redis keys for queues are postfixed with `:q`
-
-
-## Test data
-
-```javascript
-const testData = {
-    ok: (multi, ctx) => {
-        multi.hset(`${config.namespace}:${ctx.id}:h`, 'url', ctx.validUrl);
-        multi.lpush(queue.req, ctx.id);
-    },
-    invalidId: (multi, ctx) => {
-        multi.hset(`${config.namespace}:undefined:h`, 'url', 'http://httpstat.us/200');
-        multi.lpush(queue.req, 'undefined');
-    },
-    missingUrl: (multi, ctx) => {
-        multi.hset(`${config.namespace}:${ctx.id}:h`, 'undefined', 'http://httpstat.us/200');
-        multi.lpush(queue.req, ctx.id);
-    },
-    timeout: (multi, ctx) => {
-        multi.hset(`${config.namespace}:${ctx.id}:h`, 'url', 'https://com.invalid');
-        multi.lpush(queue.req, ctx.id);
-    },
-    errorUrl: (multi, ctx) => {
-        multi.hset(`${config.namespace}:${ctx.id}:h`, 'url', 'http://httpstat.us/500');
-        multi.lpush(queue.req, ctx.id);
-    },
-    invalidUrl: (multi, ctx) => {
-        multi.hset(`${config.namespace}:${ctx.id}:h`, 'url', 'http://undefined');
-        multi.lpush(queue.req, ctx.id);
-    }
-};
-```
-where the `url` is set in hashes for a specific `id` e.g. hashes `fetch:1:h` has field `url` for request `1`
-
-Note our convention that Redis keys for hashes are postfixed with `:h`
-
-
-## Activation
+where queue keys are suffixed with `:q`
 
 This service will `brpoplush` the next `id` as follows.
 ```javascript
-let id = await client.brpoplpushAsync(queue.req, queue.busy, config.popTimeout);
+let id = await client.brpoplpushAsync(queueKeys.req, queueKeys.busy, config.popTimeout);
 ```
 where in-flight requests are pushed to the `busy` queue.
 
@@ -117,7 +65,7 @@ If no new incoming requests, we might retry an previous failed request from the 
 ```javascript
 if (!id) {
     if (counters.concurrent.count < config.concurrentLimit) {
-        id = await client.rpoplpushAsync(queue.retry, queue.busy);
+        id = await client.rpoplpushAsync(queueKeys.retry, queueKeys.busy);
     }
 }
 ```
@@ -163,11 +111,13 @@ if (res.status === 200) {
             multi.hset(`${config.namespace}:${id}:headers:h`, key, res.headers.get(key).toString());
         });
         multi.expire(`${config.namespace}:${id}:headers:h`, config.messageExpire);
-        multi.lpush(queue.res, id);
-        multi.ltrim(queue.res, config.queueLimit);
-        multi.lrem(queue.busy, 1, id);
+        multi.lpush(queueKeys.res, id);
+        multi.ltrim(queueKeys.res, config.queueLimit);
+        multi.lrem(queueKeys.busy, 1, id);
         multi.publish(`${config.namespace}:res`, id);
     });
+    ...
+}
 ```
 
 ## Error handling
@@ -177,16 +127,16 @@ Otherwise for a error status i.e. not `200` e.g. `500` or `404` or what you you,
 multi.hincrby(hashesKey, 'retry', 1);
 multi.hset(hashesKey, 'limit', config.retryLimit);
 multi.hset(hashesKey, 'status', res.status);
-multi.lpush(queue.failed, id);
-multi.ltrim(queue.failed, 0, config.queueLimit);
-multi.lrem(queue.busy, 1, id);
+multi.lpush(queueKeys.failed, id);
+multi.ltrim(queueKeys.failed, 0, config.queueLimit);
+multi.lrem(queueKeys.busy, 1, id);
 ```
 If the `retry` count is within the `limit` then it will be retried later via the `:retry:q` queue.
 ```javascript
 if (retry < config.retryLimit) {
     await multiExecAsync(client, multi => {
-        multi.lpush(queue.retry, id);
-        multi.ltrim(queue.retry, 0, config.queueLimit);
+        multi.lpush(queueKeys.retry, id);
+        multi.ltrim(queueKeys.retry, 0, config.queueLimit);
     });
 }
 ```

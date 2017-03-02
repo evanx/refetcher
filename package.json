@@ -1,40 +1,28 @@
 {
-  "name": "fetch-redis",
-  "version": "0.0.1",
+  "name": "refetcher",
+  "version": "0.1.0",
   "description": "Fetch URL content into Redis",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
     "lint": "eslint --cache src",
-    "test": "babel src/index.js --out-file build/index.js; NODE_ENV=test /opt/node7/bin/node build/index.js",
-    "curl-local": "curl -s http://localhost:8801/echo/test | jq '.'",
-    "curl-telebot": "curl -s https://telebot.webserva.com/echo/test | jq '.'",
-    "development": "babel src/index.js --out-file build/index.js; NODE_ENV=development /opt/node7/bin/node build/index.js",
-    "production": "NODE_ENV=production pm2 --interpreter /opt/node7/bin/node start build/index.js --name `basename $PWD`"
+    "start": "node7 --harmony lib/index.js"
   },
-  "author": "Evan Summers",
+  "author": {
+    "url": "https://twitter.com/@evanxsummers"
+  },
   "license": "ISC",
   "dependencies": {
-    "bluebird": "^3.4.6",
-    "express": "^4.14.0",
-    "koa": "^2.0.0",
-    "koa-bodyparser": "^3.2.0",
-    "koa-router": "^7.0.1",
-    "lodash": "^4.17.2",
-    "node-fetch": "^1.6.3",
-    "redis": "^2.6.3",
-    "winston": "^2.3.0"
+    "redis-app": "^0.8.0"
   },
   "devDependencies": {
-    "babel-cli": "^6.18.0",
-    "babel-preset-es2017": "^6.16.0",
     "eslint": "^3.12.2"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/evanx/fetch-redis.git"
+    "url": "https://github.com/evanx/refetcher.git"
   },
   "bugs": {
-    "url": "https://github.com/evanx/fetch-redis/issues"
+    "url": "https://github.com/evanx/refetcher/issues"
   },
-  "homepage": "https://github.com/evanx/fetch-redis#readme"
+  "homepage": "https://github.com/evanx/refetcher#readme"
 }
