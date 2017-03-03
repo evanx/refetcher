@@ -1,7 +1,7 @@
 
-  for key in `redis-cli keys 'fetch:*:hashes'`
+  for key in `redis-cli keys 'fetch:*:h'`
   do
-    echo $key ttl:`redis-cli ttl $key`
+    echo $key `redis-cli hkeys $key`
     redis-cli hgetall $key
     echo
   done
