@@ -12,7 +12,8 @@
   },
   "license": "ISC",
   "dependencies": {
-    "redis-app": "^0.8.0"
+    "redis-app": "^0.8.2",
+    "reduce-keys": "^0.1.5"
   },
   "devDependencies": {
     "eslint": "^3.12.2"

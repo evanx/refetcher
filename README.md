@@ -24,6 +24,7 @@ This service performs the following operations:
 
 Typically sync services would subscribe to the channel `fetch:res` whereas async services might pull responses from the `:res:q` output queue.
 
+
 ## Configuration
 
 ```javascript
