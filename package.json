@@ -12,11 +12,12 @@
   },
   "license": "ISC",
   "dependencies": {
+    "lodash": "^4.17.14",
     "redis-app": "^0.9.1",
     "reduce-keys": "^0.1.5"
   },
   "devDependencies": {
-    "eslint": "^6.0.0"
+    "eslint": "^6.0.1"
   },
   "repository": {
     "type": "git",
